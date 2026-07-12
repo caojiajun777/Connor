@@ -1,0 +1,352 @@
+[
+  {
+    "handle": "OpenAI",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 10,
+    "empty_window": false,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "OpenAIDevs",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 7,
+    "empty_window": false,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "AnthropicAI",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 1,
+    "empty_window": false,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "claudeai",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 2,
+    "empty_window": false,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "GoogleDeepMind",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 2,
+    "empty_window": false,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "GoogleAI",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 1,
+    "empty_window": false,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "GeminiApp",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 1,
+    "empty_window": false,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "xai",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "AIatMeta",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 1,
+    "empty_window": false,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "deepseek_ai",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "Alibaba_Qwen",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "MistralAI",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "Kimi_Moonshot",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "Zai_org",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "MiniMax_AI",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 4,
+    "empty_window": false,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "TencentHunyuan",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 1,
+    "empty_window": false,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "XiaomiMiMo",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "XiaomiMiMoDevs",
+    "success": true,
+    "raw_count": 5,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "StepFun_ai",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "ByteDanceOSS",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "thsottiaux",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 10,
+    "empty_window": false,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "gabrielchua",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 10,
+    "empty_window": false,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "markchen90",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "bcherny",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "OfficialLoganK",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 3,
+    "empty_window": false,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "arthurmensch",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "GuillaumeLample",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "JustinLin610",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "alexandr_wang",
+    "success": true,
+    "raw_count": 20,
+    "retained_count": 10,
+    "empty_window": false,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "LuminaXspace",
+    "success": true,
+    "raw_count": 0,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "testingcatalog",
+    "success": true,
+    "raw_count": 0,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "ArtificialAnlys",
+    "success": true,
+    "raw_count": 0,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "simonw",
+    "success": true,
+    "raw_count": 0,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "rasbt",
+    "success": true,
+    "raw_count": 0,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  },
+  {
+    "handle": "scaling01",
+    "success": true,
+    "raw_count": 0,
+    "retained_count": 0,
+    "empty_window": true,
+    "page_incomplete": false,
+    "error": null,
+    "reason_code": null
+  }
+]
