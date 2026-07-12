@@ -1,0 +1,10 @@
+[mcp_servers.x_news]
+command = "C:\\Users\\90556\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe"
+args = ["C:\\Users\\90556\\.codex\\tools\\x-news-mcp\\dist\\index.js"]
+startup_timeout_sec = 20
+tool_timeout_sec = 120
+
+[mcp_servers.x_news.env]
+X_AGENT_PROFILE_DIR = "C:\\Users\\90556\\.codex-x-news-agent"
+X_AGENT_CHROME_PATH = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+X_AGENT_TIMEOUT_MS = "30000"

@@ -1,0 +1,25 @@
+# Node / TypeScript
+node_modules/
+dist/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+.coverage
+htmlcov/
+
+# Runtime / secrets
+.env
+.x-agent-profile/
+data/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
