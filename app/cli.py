@@ -33,11 +33,11 @@ def _build_collect_parser(subparsers: argparse._SubParsersAction[argparse.Argume
     parser = subparsers.add_parser("collect", help="Collect posts from X watchlist accounts")
     parser.add_argument(
         "--since",
-        help="Inclusive window start (ISO-8601). Defaults to yesterday 00:00 local.",
+        help="Inclusive window start (ISO-8601). Defaults to now - 72 hours.",
     )
     parser.add_argument(
         "--until",
-        help="Exclusive window end (ISO-8601). Defaults to today 00:00 local.",
+        help="Inclusive window end (ISO-8601). Defaults to now.",
     )
     parser.add_argument(
         "--watchlist",
@@ -62,7 +62,7 @@ def _build_collect_parser(subparsers: argparse._SubParsersAction[argparse.Argume
         "--max-posts-per-account",
         type=int,
         default=None,
-        help="Override per-account max posts (1-20)",
+        help="Override per-account retain limit after filtering (1-10, default 10)",
     )
     parser.add_argument(
         "--dry-run",
@@ -77,22 +77,18 @@ def _cmd_x_watchlist(args: argparse.Namespace) -> int:
         return 2
 
     now = datetime.now().astimezone()
-    since = _parse_datetime(args.since) if args.since else (now - timedelta(days=1)).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
-    until = _parse_datetime(args.until) if args.until else now.replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
-    if until <= since:
-        print("--until must be later than --since", file=sys.stderr)
+    since = _parse_datetime(args.since) if args.since else (now - timedelta(hours=72))
+    until = _parse_datetime(args.until) if args.until else now
+    if until < since:
+        print("--until must be later than or equal to --since", file=sys.stderr)
         return 2
 
     handles = None
     if args.handles:
         handles = [item.strip() for item in args.handles.split(",") if item.strip()]
 
-    if args.max_posts_per_account is not None and not (1 <= args.max_posts_per_account <= 20):
-        print("--max-posts-per-account must be between 1 and 20", file=sys.stderr)
+    if args.max_posts_per_account is not None and not (1 <= args.max_posts_per_account <= 10):
+        print("--max-posts-per-account must be between 1 and 10", file=sys.stderr)
         return 2
 
     options = CollectOptions(

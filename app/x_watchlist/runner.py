@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from app.x_watchlist.cleaner import CleaningStats, clean_posts
+from app.x_watchlist.cleaner import DEFAULT_MAX_POSTS_PER_ACCOUNT, CleaningStats, clean_posts
 from app.x_watchlist.collector import CollectionBatch, collect_accounts
 from app.x_watchlist.config import filter_accounts, load_watchlist
 from app.x_watchlist.coverage import build_coverage_report
@@ -47,6 +47,8 @@ async def run_collect(options: CollectOptions) -> CollectRunResult:
     started_at = utc_now_iso()
     run_id = options.run_id or datetime.now().strftime("%Y%m%dT%H%M%S") + "-" + uuid.uuid4().hex[:8]
     window_start, window_end = _parse_window(options.since, options.until)
+    retain_limit = options.max_posts_per_account or DEFAULT_MAX_POSTS_PER_ACCOUNT
+    retain_limit = max(1, min(retain_limit, 10))
 
     config: WatchlistConfig = load_watchlist(options.watchlist_path)
     enabled_accounts = filter_accounts(config, handles=options.handles, enabled_only=True)
@@ -84,6 +86,7 @@ async def run_collect(options: CollectOptions) -> CollectRunResult:
             raw_posts_collected=0,
             clean_posts=[],
             cleaning_stats=CleaningStats(),
+            retained_by_handle={},
             started_at=started_at,
             finished_at=finished_at,
         )
@@ -100,7 +103,6 @@ async def run_collect(options: CollectOptions) -> CollectRunResult:
         )
 
     batch: CollectionBatch | None = None
-    session_status: dict | None = None
     global_failure = False
 
     async with XNewsMCPClient(XNewsMCPSettings.from_env()) as client:
@@ -132,7 +134,9 @@ async def run_collect(options: CollectOptions) -> CollectRunResult:
                 client,
                 enabled_accounts,
                 run_id=run_id,
-                max_posts_override=options.max_posts_per_account,
+                window_start=options.since,
+                window_end=options.until,
+                max_posts_override=retain_limit,
             )
         except MCPFatalSessionError:
             global_failure = True
@@ -143,7 +147,6 @@ async def run_collect(options: CollectOptions) -> CollectRunResult:
         batch = CollectionBatch()
 
     storage.save_raw_posts(batch.raw_posts)
-    storage.save_account_results(batch.account_results)
     storage.save_errors(batch.account_errors)
 
     cleaning = clean_posts(
@@ -152,19 +155,32 @@ async def run_collect(options: CollectOptions) -> CollectRunResult:
         window_start=options.since,
         window_end=options.until,
         cursors_by_handle=cursor_store.all(),
+        max_posts_per_account=retain_limit,
     )
-    storage.save_clean_posts(cleaning.posts)
+    storage.save_clean_posts(
+        cleaning.posts,
+        run_id=run_id,
+        window_start=window_start,
+        window_end=window_end,
+    )
 
+    # Enrich account results with retained counts after cleaning.
+    for result in batch.account_results:
+        retained = cleaning.retained_by_handle.get(result.handle.lower(), 0)
+        result.retained_count = retained
+        result.empty_window = result.success and retained == 0
+    storage.save_account_results(batch.account_results)
+
+    # Cursor updates only after successful fetch + persist + clean pipeline.
     if not global_failure:
         collected_at = utc_now_iso()
         for result in batch.account_results:
             if not result.success:
                 continue
-            account_posts = [post for post in cleaning.posts if post.handle.lower() == result.handle.lower()]
-            all_account_posts = [
-                post for post in batch.normalized_posts if post.handle.lower() == result.handle.lower()
+            account_posts = [
+                post for post in cleaning.posts if post.handle.lower() == result.handle.lower()
             ]
-            cursor_store.update_from_success(result.handle, all_account_posts or account_posts, collected_at)
+            cursor_store.update_from_success(result.handle, account_posts, collected_at)
         cursor_store.save()
 
     finished_at = utc_now_iso()
@@ -179,6 +195,7 @@ async def run_collect(options: CollectOptions) -> CollectRunResult:
         raw_posts_collected=len(batch.normalized_posts),
         clean_posts=cleaning.posts,
         cleaning_stats=cleaning.stats,
+        retained_by_handle=cleaning.retained_by_handle,
         started_at=started_at,
         finished_at=finished_at,
     )

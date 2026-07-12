@@ -19,9 +19,9 @@ def sample_account() -> XSourceAccount:
         priority="P0",
         include_originals=True,
         include_quotes=True,
-        include_replies=False,
-        include_reposts=False,
-        max_posts_per_run=20,
+        include_replies=True,
+        include_reposts=True,
+        max_posts_per_run=10,
     )
 
 
@@ -36,8 +36,8 @@ def employee_account() -> XSourceAccount:
         include_originals=True,
         include_quotes=True,
         include_replies=True,
-        include_reposts=False,
-        max_posts_per_run=20,
+        include_reposts=True,
+        max_posts_per_run=10,
     )
 
 
@@ -84,24 +84,24 @@ def watchlist_yaml(tmp_path: Path) -> Path:
             "official": {
                 "include_originals": True,
                 "include_quotes": True,
-                "include_replies": False,
-                "include_reposts": False,
-                "max_posts_per_run": 20,
+                "include_replies": True,
+                "include_reposts": True,
+                "max_posts_per_run": 10,
                 "priority": "P0",
             },
             "employee": {
                 "include_originals": True,
                 "include_quotes": True,
                 "include_replies": True,
-                "include_reposts": False,
-                "max_posts_per_run": 20,
+                "include_reposts": True,
+                "max_posts_per_run": 10,
                 "priority": "P0",
             },
             "leak": {
                 "include_originals": True,
                 "include_quotes": True,
-                "include_replies": False,
-                "include_reposts": False,
+                "include_replies": True,
+                "include_reposts": True,
                 "max_posts_per_run": 10,
                 "priority": "P1",
             },

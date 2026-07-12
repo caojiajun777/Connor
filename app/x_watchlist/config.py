@@ -12,25 +12,25 @@ DEFAULT_RULES: dict[str, dict[str, Any]] = {
     "official": {
         "include_originals": True,
         "include_quotes": True,
-        "include_replies": False,
-        "include_reposts": False,
-        "max_posts_per_run": 20,
+        "include_replies": True,
+        "include_reposts": True,
+        "max_posts_per_run": 10,
         "priority": "P0",
     },
     "employee": {
         "include_originals": True,
         "include_quotes": True,
         "include_replies": True,
-        "include_reposts": False,
-        "max_posts_per_run": 20,
+        "include_reposts": True,
+        "max_posts_per_run": 10,
         "priority": "P0",
     },
     "leak": {
         "include_originals": True,
         "include_quotes": True,
-        "include_replies": False,
-        "include_reposts": False,
-        "max_posts_per_run": 20,
+        "include_replies": True,
+        "include_reposts": True,
+        "max_posts_per_run": 10,
         "priority": "P1",
     },
 }
@@ -85,9 +85,9 @@ def _merge_account(raw: dict[str, Any], yaml_defaults: dict[str, dict[str, Any]]
         raise WatchlistConfigError(
             f"Account {account.handle} has invalid source_type '{account.source_type}'"
         )
-    if account.max_posts_per_run < 1 or account.max_posts_per_run > 20:
+    if account.max_posts_per_run < 1 or account.max_posts_per_run > 10:
         raise WatchlistConfigError(
-            f"Account {account.handle} max_posts_per_run must be between 1 and 20"
+            f"Account {account.handle} max_posts_per_run must be between 1 and 10"
         )
     return account
 
