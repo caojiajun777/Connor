@@ -49,10 +49,10 @@ class XSourceAccount(BaseModel):
 
     include_originals: bool = True
     include_quotes: bool = True
-    include_replies: bool = False
-    include_reposts: bool = False
+    include_replies: bool = True
+    include_reposts: bool = True
 
-    max_posts_per_run: int = 20
+    max_posts_per_run: int = 10
     enabled: bool = True
     notes: str | None = None
 
@@ -100,6 +100,9 @@ class AccountCollectionResult(BaseModel):
     handle: str
     success: bool
     raw_count: int = 0
+    retained_count: int = 0
+    empty_window: bool = False
+    page_incomplete: bool = False
     error: str | None = None
     reason_code: str | None = None
 
@@ -119,11 +122,15 @@ class CoverageReport(BaseModel):
     accounts_enabled: int = 0
     accounts_succeeded: int = 0
     accounts_failed: int = 0
+    accounts_empty_window: int = 0
+    accounts_page_incomplete: int = 0
 
     raw_posts_collected: int = 0
     clean_posts_retained: int = 0
     duplicates_removed: int = 0
     out_of_window_removed: int = 0
+    truncated_to_limit: int = 0
+    pinned_old_removed: int = 0
     reposts_removed: int = 0
     replies_removed: int = 0
     quotes_removed: int = 0
@@ -131,6 +138,8 @@ class CoverageReport(BaseModel):
     empty_removed: int = 0
 
     by_source_type: dict[str, int] = Field(default_factory=dict)
+    retained_by_handle: dict[str, int] = Field(default_factory=dict)
+    empty_window_handles: list[str] = Field(default_factory=list)
 
     account_errors: list[AccountError] = Field(default_factory=list)
     started_at: str

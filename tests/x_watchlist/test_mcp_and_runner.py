@@ -117,7 +117,9 @@ async def test_collect_accounts_isolates_per_account_errors(sample_account, empl
                             "created_at": "2026-07-11T12:00:00.000Z",
                             "text": "ok",
                         }
-                    ]
+                    ],
+                    "has_more": False,
+                    "next_offset": None,
                 }
             raise MCPClientError("x_service_error", "boom")
 
@@ -125,6 +127,8 @@ async def test_collect_accounts_isolates_per_account_errors(sample_account, empl
         FakeClient(),  # type: ignore[arg-type]
         [sample_account, employee_account],
         run_id="run-1",
+        window_start=datetime(2026, 7, 10, tzinfo=timezone.utc),
+        window_end=datetime(2026, 7, 12, tzinfo=timezone.utc),
     )
     assert len(batch.normalized_posts) == 1
     assert batch.account_results[0].success is True
@@ -139,7 +143,13 @@ async def test_collect_accounts_rethrows_fatal(sample_account) -> None:
             raise MCPFatalSessionError("session_cookie_rejected", "rejected")
 
     with pytest.raises(MCPFatalSessionError):
-        await collect_accounts(FakeClient(), [sample_account], run_id="run-1")  # type: ignore[arg-type]
+        await collect_accounts(
+            FakeClient(),  # type: ignore[arg-type]
+            [sample_account],
+            run_id="run-1",
+            window_start=datetime(2026, 7, 10, tzinfo=timezone.utc),
+            window_end=datetime(2026, 7, 12, tzinfo=timezone.utc),
+        )
 
 
 @pytest.mark.asyncio

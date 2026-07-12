@@ -10,6 +10,8 @@ X 信息源采集项目：本地 MCP 服务（TypeScript）+ Watchlist 增量编
 src/                 # X News MCP server（Playwright + 持久 Chrome profile）
 app/x_watchlist/     # Python 采集编排：MCP client / cleaner / cursors / runner
 config/              # x_watchlist.yaml 账号清单
+docs/                # 采集层设计说明
+fixtures/            # 轻量黄金运行样本（M2 输入）
 tests/x_watchlist/   # Python 单元测试
 .codex/config.toml   # Codex MCP 注册
 ```
@@ -64,7 +66,7 @@ Agent 可调用：
 
 ## X Watchlist 增量采集（Milestone 1）
 
-Python 编排层通过 MCP 串行调用现有 X 工具，按账号 watchlist 增量采集并落盘。
+Python 编排层通过 MCP 串行调用现有 X 工具，按固定信源采集最近 **72 小时**内内容，技术去重后按发布时间倒序，**每账号最多保留 10 条**。设计说明见 `docs/x-source-collection-design.md`。
 
 ### 安装
 
@@ -78,11 +80,11 @@ pip install -e ".[dev]"
 # 干跑：只加载 watchlist 并写 run 骨架，不调用 MCP
 python -m app.cli x-watchlist collect --dry-run
 
-# 正式采集（默认窗口：昨天 00:00 ~ 今天 00:00，本地时区）
+# 正式采集（默认窗口：现在往前 72 小时 ~ 现在）
 python -m app.cli x-watchlist collect
 
-# 指定账号与窗口
-python -m app.cli x-watchlist collect --handles OpenAI,thsottiaux,LuminaXspace --since 2026-07-11T00:00:00+08:00 --until 2026-07-12T00:00:00+08:00
+# 指定账号
+python -m app.cli x-watchlist collect --handles OpenAI,thsottiaux,LuminaXspace
 ```
 
 产物目录：`data/x_watchlist_runs/<run_id>/`（`run.json`、`raw_posts.json`、`clean_posts.json`、`coverage.json` 等）。游标：`data/x_watchlist_cursors.json`。

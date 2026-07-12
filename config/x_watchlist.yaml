@@ -4,23 +4,23 @@ defaults:
   official:
     include_originals: true
     include_quotes: true
-    include_replies: false
-    include_reposts: false
-    max_posts_per_run: 20
+    include_replies: true
+    include_reposts: true
+    max_posts_per_run: 10
     priority: P0
   employee:
     include_originals: true
     include_quotes: true
     include_replies: true
-    include_reposts: false
-    max_posts_per_run: 20
+    include_reposts: true
+    max_posts_per_run: 10
     priority: P0
   leak:
     include_originals: true
     include_quotes: true
-    include_replies: false
-    include_reposts: false
-    max_posts_per_run: 20
+    include_replies: true
+    include_reposts: true
+    max_posts_per_run: 10
     priority: P1
 
 accounts:

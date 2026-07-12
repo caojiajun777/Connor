@@ -23,15 +23,28 @@ def build_coverage_report(
     raw_posts_collected: int,
     clean_posts: list[NormalizedPost],
     cleaning_stats: CleaningStats,
+    retained_by_handle: dict[str, int] | None = None,
     started_at: str,
     finished_at: str,
 ) -> CoverageReport:
     succeeded = sum(1 for result in account_results if result.success)
     failed = len(account_results) - succeeded
+    retained_by_handle = retained_by_handle or {}
 
     by_source_type: dict[str, int] = {}
     for post in clean_posts:
         by_source_type[post.source_type] = by_source_type.get(post.source_type, 0) + 1
+
+    empty_window_handles: list[str] = []
+    page_incomplete = 0
+    for result in account_results:
+        if not result.success:
+            continue
+        retained = retained_by_handle.get(result.handle.lower(), result.retained_count)
+        if retained == 0:
+            empty_window_handles.append(result.handle)
+        if result.page_incomplete:
+            page_incomplete += 1
 
     start_dt = datetime.fromisoformat(started_at)
     end_dt = datetime.fromisoformat(finished_at)
@@ -52,16 +65,22 @@ def build_coverage_report(
         accounts_enabled=accounts_enabled,
         accounts_succeeded=succeeded,
         accounts_failed=failed,
+        accounts_empty_window=len(empty_window_handles),
+        accounts_page_incomplete=page_incomplete,
         raw_posts_collected=raw_posts_collected,
         clean_posts_retained=len(clean_posts),
         duplicates_removed=cleaning_stats.duplicates_removed,
         out_of_window_removed=cleaning_stats.out_of_window_removed,
+        truncated_to_limit=cleaning_stats.truncated_to_limit,
+        pinned_old_removed=cleaning_stats.pinned_old_removed,
         reposts_removed=cleaning_stats.reposts_removed,
         replies_removed=cleaning_stats.replies_removed,
         quotes_removed=cleaning_stats.quotes_removed,
         pinned_skipped=cleaning_stats.pinned_skipped,
         empty_removed=cleaning_stats.empty_removed,
         by_source_type=by_source_type,
+        retained_by_handle=retained_by_handle,
+        empty_window_handles=empty_window_handles,
         account_errors=account_errors,
         started_at=started_at,
         finished_at=finished_at,

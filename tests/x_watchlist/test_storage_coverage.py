@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from tests.x_watchlist.conftest import make_post
@@ -7,7 +8,7 @@ from tests.x_watchlist.conftest import make_post
 from app.x_watchlist.cleaner import CleaningStats
 from app.x_watchlist.coverage import build_coverage_report
 from app.x_watchlist.schemas import AccountCollectionResult, AccountError, RunMetadata, WatchlistConfig
-from app.x_watchlist.storage import RunStorage
+from app.x_watchlist.storage import CLEAN_POSTS_SCHEMA_VERSION, RunStorage
 
 
 def test_build_coverage_report_partial_status() -> None:
@@ -19,7 +20,12 @@ def test_build_coverage_report_partial_status() -> None:
         accounts_enabled=3,
         account_results=[
             AccountCollectionResult(handle="OpenAI", success=True, raw_count=2),
-            AccountCollectionResult(handle="xai", success=False, error="timeout", reason_code="browser_timeout"),
+            AccountCollectionResult(
+                handle="xai",
+                success=False,
+                error="timeout",
+                reason_code="browser_timeout",
+            ),
         ],
         account_errors=[AccountError(handle="xai", error="timeout", reason_code="browser_timeout")],
         raw_posts_collected=2,
@@ -39,7 +45,7 @@ def test_build_coverage_report_partial_status() -> None:
     assert coverage.duration_seconds == 5.0
 
 
-def test_run_storage_writes_artifacts(tmp_path: Path, sample_account) -> None:
+def test_run_storage_writes_clean_posts_v1_contract(tmp_path: Path, sample_account) -> None:
     storage = RunStorage(tmp_path, "run-xyz")
     metadata = RunMetadata(
         run_id="run-xyz",
@@ -51,11 +57,20 @@ def test_run_storage_writes_artifacts(tmp_path: Path, sample_account) -> None:
     )
     storage.save_run_metadata(metadata)
     storage.save_watchlist_snapshot(WatchlistConfig(accounts=[sample_account]))
-    storage.save_raw_posts([{"post_id": "1"}])
-    storage.save_clean_posts([make_post(post_id="1")])
+    storage.save_raw_posts([{"post_id": "1", "raw_payload": {"secret": "nope"}}])
+    post = make_post(post_id="1")
+    post.raw_payload = {"auth_token": "SECRET"}
+    storage.save_clean_posts(
+        [post],
+        run_id="run-xyz",
+        window_start=metadata.window_start,
+        window_end=metadata.window_end,
+    )
     storage.save_account_results([AccountCollectionResult(handle="OpenAI", success=True, raw_count=1)])
     storage.save_errors([])
-    storage.save_session_status({"authenticated": True, "auth_token": "SECRET", "has_auth_token": True})
+    storage.save_session_status(
+        {"authenticated": True, "auth_token": "SECRET", "has_auth_token": True}
+    )
 
     coverage = build_coverage_report(
         run_id="run-xyz",
@@ -73,9 +88,14 @@ def test_run_storage_writes_artifacts(tmp_path: Path, sample_account) -> None:
     )
     coverage_path = storage.save_coverage(coverage)
 
-    assert (storage.run_dir / "run.json").exists()
-    assert (storage.run_dir / "clean_posts.json").exists()
     assert coverage_path.exists()
+    payload = json.loads((storage.run_dir / "clean_posts.json").read_text(encoding="utf-8"))
+    assert payload["schema_version"] == CLEAN_POSTS_SCHEMA_VERSION
+    assert payload["run_id"] == "run-xyz"
+    assert "posts" in payload
+    assert "raw_payload" not in payload["posts"][0]
+    assert "SECRET" not in json.dumps(payload)
+
     session_text = (storage.run_dir / "session_status.json").read_text(encoding="utf-8")
     assert "SECRET" not in session_text
     assert "has_auth_token" in session_text

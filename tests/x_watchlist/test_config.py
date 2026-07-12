@@ -13,8 +13,8 @@ def test_load_watchlist_merges_defaults(watchlist_yaml: Path) -> None:
     assert config.version == 1
     openai = next(account for account in config.accounts if account.handle == "OpenAI")
     assert openai.priority == "P0"
-    assert openai.include_replies is False
-    assert openai.max_posts_per_run == 20
+    assert openai.include_replies is True
+    assert openai.max_posts_per_run == 10
 
     employee = next(account for account in config.accounts if account.handle == "thsottiaux")
     assert employee.include_replies is True
@@ -22,6 +22,7 @@ def test_load_watchlist_merges_defaults(watchlist_yaml: Path) -> None:
     leak = next(account for account in config.accounts if account.handle == "LuminaXspace")
     assert leak.priority == "P1"
     assert leak.max_posts_per_run == 10
+    assert leak.include_reposts is True
 
 
 def test_filter_accounts_enabled_and_handles(watchlist_yaml: Path) -> None:
@@ -65,8 +66,11 @@ def test_load_real_project_watchlist() -> None:
     config = load_watchlist(path)
     enabled = filter_accounts(config, enabled_only=True)
     assert len(config.accounts) >= 30
-    assert len(enabled) < len(config.accounts)
+    assert len(enabled) == len(config.accounts)
     handles = {account.handle.lower() for account in enabled}
     assert "openai" in handles
     assert "thsottiaux" in handles
     assert "luminaxspace" in handles
+    assert "zai_org" in handles
+    assert "xiaomimimo" in handles
+    assert "xiaomimimodevs" in handles
