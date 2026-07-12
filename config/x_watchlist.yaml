@@ -1,0 +1,174 @@
+version: 1
+
+defaults:
+  official:
+    include_originals: true
+    include_quotes: true
+    include_replies: false
+    include_reposts: false
+    max_posts_per_run: 20
+    priority: P0
+  employee:
+    include_originals: true
+    include_quotes: true
+    include_replies: true
+    include_reposts: false
+    max_posts_per_run: 20
+    priority: P0
+  leak:
+    include_originals: true
+    include_quotes: true
+    include_replies: false
+    include_reposts: false
+    max_posts_per_run: 20
+    priority: P1
+
+accounts:
+  # --- Official accounts ---
+  - handle: OpenAI
+    display_name: OpenAI
+    organization: OpenAI
+    source_type: official
+  - handle: OpenAIDevs
+    display_name: OpenAI Developers
+    organization: OpenAI
+    source_type: official
+  - handle: AnthropicAI
+    display_name: Anthropic
+    organization: Anthropic
+    source_type: official
+  - handle: claudeai
+    display_name: Claude
+    organization: Anthropic
+    source_type: official
+  - handle: GoogleDeepMind
+    display_name: Google DeepMind
+    organization: Google
+    source_type: official
+  - handle: GoogleAI
+    display_name: Google AI
+    organization: Google
+    source_type: official
+  - handle: GeminiApp
+    display_name: Gemini
+    organization: Google
+    source_type: official
+  - handle: xai
+    display_name: xAI
+    organization: xAI
+    source_type: official
+  - handle: AIatMeta
+    display_name: AI at Meta
+    organization: Meta
+    source_type: official
+  - handle: deepseek_ai
+    display_name: DeepSeek
+    organization: DeepSeek
+    source_type: official
+  - handle: Alibaba_Qwen
+    display_name: Qwen
+    organization: Alibaba
+    source_type: official
+  - handle: MistralAI
+    display_name: Mistral AI
+    organization: Mistral
+    source_type: official
+  - handle: Kimi_Moonshot
+    display_name: Kimi
+    organization: Moonshot
+    source_type: official
+  - handle: Zai_org
+    display_name: Z.ai
+    organization: Zhipu AI
+    source_type: official
+    priority: P0
+  - handle: MiniMax_AI
+    display_name: MiniMax
+    organization: MiniMax
+    source_type: official
+  - handle: TencentHunyuan
+    display_name: Tencent Hunyuan
+    organization: Tencent
+    source_type: official
+  - handle: XiaomiMiMo
+    display_name: Xiaomi MiMo
+    organization: Xiaomi
+    source_type: official
+    priority: P0
+  - handle: XiaomiMiMoDevs
+    display_name: Xiaomi MiMo Developers
+    organization: Xiaomi
+    source_type: official
+    priority: P1
+  - handle: StepFun_ai
+    display_name: StepFun
+    organization: StepFun
+    source_type: official
+  - handle: ByteDanceOSS
+    display_name: ByteDance OSS
+    organization: ByteDance
+    source_type: official
+
+  # --- Core employees and technical staff ---
+  - handle: thsottiaux
+    display_name: Thomas Ottiaux
+    organization: OpenAI
+    source_type: employee
+  - handle: gabrielchua
+    display_name: Gabriel Chua
+    organization: OpenAI
+    source_type: employee
+  - handle: markchen90
+    display_name: Mark Chen
+    organization: OpenAI
+    source_type: employee
+  - handle: bcherny
+    display_name: Boris Cherny
+    organization: Anthropic
+    source_type: employee
+  - handle: OfficialLoganK
+    display_name: Logan Kilpatrick
+    organization: OpenAI
+    source_type: employee
+  - handle: arthurmensch
+    display_name: Arthur Mensch
+    organization: Mistral
+    source_type: employee
+  - handle: GuillaumeLample
+    display_name: Guillaume Lample
+    organization: Mistral
+    source_type: employee
+  - handle: JustinLin610
+    display_name: Justin Lin
+    organization: DeepSeek
+    source_type: employee
+  - handle: alexandr_wang
+    display_name: Alexandr Wang
+    organization: Scale AI
+    source_type: employee
+
+  # --- Leak and frontier observation accounts ---
+  - handle: LuminaXspace
+    display_name: LuminaXspace
+    organization: null
+    source_type: leak
+  - handle: testingcatalog
+    display_name: Testing Catalog
+    organization: null
+    source_type: leak
+  - handle: ArtificialAnlys
+    display_name: Artificial Analysis
+    organization: null
+    source_type: analyst
+  - handle: simonw
+    display_name: Simon Willison
+    organization: null
+    source_type: technical_analyst
+  - handle: rasbt
+    display_name: Sebastian Raschka
+    organization: null
+    source_type: technical_analyst
+  - handle: scaling01
+    display_name: Scaling01
+    organization: null
+    source_type: leak_and_opinion
