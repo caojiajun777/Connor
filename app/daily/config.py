@@ -30,7 +30,8 @@ class DailySettings:
         return cls(
             database_url=os.environ.get(
                 "CONNOR_DATABASE_URL",
-                "postgresql+psycopg://connor:connor@localhost:5432/connor",
+                # Dedicated DB: legacy `connor` already owns a VARCHAR `runs` table.
+                "postgresql+psycopg://connor:connor@localhost:5432/connor_daily",
             ),
             redis_url=os.environ.get("CONNOR_REDIS_URL", "redis://localhost:6379/0"),
             watchlist_path=Path(

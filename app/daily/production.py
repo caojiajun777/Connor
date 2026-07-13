@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy.orm import Session, sessionmaker
@@ -12,6 +14,7 @@ from app.daily.checkpoint import (
     create_postgres_checkpointer,
     setup_checkpointer,
 )
+from app.daily.collect_loop import run_collect_accounts_loop
 from app.daily.config import DailySettings
 from app.daily.db import create_db_engine, create_session_factory, init_schema
 from app.daily.db.lock import DailyRunLock
@@ -20,8 +23,29 @@ from app.daily.enums import RunStatus
 from app.daily.graph import build_daily_graph
 from app.daily.import_cursors import create_run_row
 from app.daily.metrics import build_metrics_from_state, emit_metrics, maybe_alert
+from app.daily.redis_cursors import RedisCursorStore, connect_redis
 from app.daily.selection_phase import run_m3d_selection_phase
 from app.daily.summary_phase import run_m3c_summary_phase
+from app.editorial.llm_client import LLMSettings, OpenAICompatibleClient
+from app.x_watchlist.config import filter_accounts, load_watchlist
+from app.x_watchlist.mcp_client import XNewsMCPClient
+
+
+def _live_llm_client(*, model: str | None = None, max_tokens: int = 4096) -> OpenAICompatibleClient:
+    """Require a real LLM client for live phases (never silently mock)."""
+    base = LLMSettings.from_env()
+    return OpenAICompatibleClient(
+        LLMSettings(
+            api_key=base.api_key,
+            base_url=base.base_url,
+            model=model or base.model,
+            timeout_sec=base.timeout_sec,
+            max_tokens=max_tokens,
+            reasoning_effort=base.reasoning_effort,
+            # Daily batch phases need reliable JSON; keep thinking off.
+            thinking_enabled=False,
+        )
+    )
 
 
 @dataclass
@@ -130,48 +154,108 @@ class DailyProductionRuntime:
             graph = build_daily_graph(checkpointer=checkpointer)
             config = {"configurable": {"thread_id": run_id}}
 
+            collect_loop_result: dict[str, Any] | None = None
             summary_phase = None
             selection_phase = None
-            if not skip_llm_phases and not dry_run:
-                with self.session_factory() as session:
-                    _update_run(session, session.get(Run, run_id), status=RunStatus.SUMMARIZING.value)
-                    session.commit()
-                    summary_phase = run_m3c_summary_phase(
-                        session,
-                        run_id,
-                        dry_run=False,
-                        accept_partial=accept_partial,
-                    )
-                    session.commit()
-                    gate = summary_phase.get("summary_gate_result") or {}
-                    if not gate.get("complete"):
-                        return self._finish_paused(
-                            run_id,
-                            started,
-                            dry_run=False,
-                            paused_reason=gate.get("reason") or "summary_paused",
-                            summary_phase=summary_phase,
-                        )
 
-                    _update_run(session, session.get(Run, run_id), status=RunStatus.EVALUATING.value)
-                    session.commit()
-                    selection_phase = run_m3d_selection_phase(
-                        session,
+            # Live path: MCP collect → PG persist → summarize → evaluate/select
+            if not dry_run:
+                collect_loop_result = self._run_live_collect(
+                    run_id, accept_gap=accept_gap, accept_partial=accept_partial
+                )
+                if not collect_loop_result.get("collection_complete"):
+                    return self._finish_paused(
                         run_id,
+                        started,
                         dry_run=False,
-                        accept_partial=accept_partial,
+                        paused_reason=collect_loop_result.get("paused_reason")
+                        or "collection_paused",
+                        state={"meta": {"collect_loop_result": collect_loop_result}},
                     )
-                    session.commit()
-                    egate = selection_phase.get("evaluation_gate_result") or {}
-                    if not egate.get("complete"):
-                        return self._finish_paused(
-                            run_id,
-                            started,
-                            dry_run=False,
-                            paused_reason=egate.get("reason") or "evaluation_paused",
-                            summary_phase=summary_phase,
-                            selection_phase=selection_phase,
+
+                if not skip_llm_phases:
+                    summary_llm = _live_llm_client(
+                        model=self.settings.summary_model, max_tokens=2048
+                    )
+                    eval_llm = _live_llm_client(
+                        model=self.settings.evaluation_model, max_tokens=2048
+                    )
+                    select_llm = _live_llm_client(
+                        model=self.settings.editorial_model, max_tokens=16384
+                    )
+                    with self.session_factory() as session:
+                        _update_run(
+                            session,
+                            session.get(Run, run_id),
+                            status=RunStatus.SUMMARIZING.value,
                         )
+                        session.commit()
+                        summary_phase = run_m3c_summary_phase(
+                            session,
+                            run_id,
+                            dry_run=False,
+                            accept_partial=accept_partial,
+                            llm=summary_llm,
+                        )
+                        session.commit()
+                        gate = summary_phase.get("summary_gate_result") or {}
+                        if not gate.get("complete"):
+                            return self._finish_paused(
+                                run_id,
+                                started,
+                                dry_run=False,
+                                paused_reason=gate.get("reason") or "summary_paused",
+                                summary_phase=summary_phase,
+                                state={
+                                    "meta": {"collect_loop_result": collect_loop_result}
+                                },
+                            )
+
+                        _update_run(
+                            session,
+                            session.get(Run, run_id),
+                            status=RunStatus.EVALUATING.value,
+                        )
+                        session.commit()
+                        selection_phase = run_m3d_selection_phase(
+                            session,
+                            run_id,
+                            dry_run=False,
+                            accept_partial=accept_partial,
+                            eval_llm=eval_llm,
+                            select_llm=select_llm,
+                        )
+                        session.commit()
+                        egate = selection_phase.get("evaluation_gate_result") or {}
+                        if not egate.get("complete"):
+                            return self._finish_paused(
+                                run_id,
+                                started,
+                                dry_run=False,
+                                paused_reason=egate.get("reason")
+                                or "evaluation_paused",
+                                summary_phase=summary_phase,
+                                selection_phase=selection_phase,
+                                state={
+                                    "meta": {"collect_loop_result": collect_loop_result}
+                                },
+                            )
+
+            meta: dict[str, Any] = {}
+            if collect_loop_result is not None:
+                meta["collect_loop_result"] = collect_loop_result
+            if summary_phase:
+                meta.update(summary_phase)
+            if selection_phase:
+                meta.update(
+                    {
+                        "evaluate_result": selection_phase.get("evaluate_result"),
+                        "evaluation_gate_result": selection_phase.get(
+                            "evaluation_gate_result"
+                        ),
+                        "selection_result": selection_phase.get("selection_result"),
+                    }
+                )
 
             state = graph.invoke(
                 {
@@ -180,20 +264,7 @@ class DailyProductionRuntime:
                     "accept_gap": accept_gap,
                     "accept_partial": accept_partial,
                     "errors": [],
-                    "meta": {
-                        **(summary_phase or {}),
-                        **(
-                            {
-                                "evaluate_result": (selection_phase or {}).get("evaluate_result"),
-                                "evaluation_gate_result": (selection_phase or {}).get(
-                                    "evaluation_gate_result"
-                                ),
-                                "selection_result": (selection_phase or {}).get("selection_result"),
-                            }
-                            if selection_phase
-                            else {}
-                        ),
-                    },
+                    "meta": meta,
                 },
                 config,
             )
@@ -226,7 +297,7 @@ class DailyProductionRuntime:
         except Exception as exc:  # noqa: BLE001
             return ProductionRunResult(
                 ok=False,
-                run_id=None,
+                run_id=locals().get("run_id"),
                 status=RunStatus.FAILED.value,
                 error=str(exc),
             )
@@ -281,11 +352,15 @@ class DailyProductionRuntime:
                 session.commit()
 
             with self.session_factory() as session:
+                summary_llm = None if dry_run else _live_llm_client(
+                    model=self.settings.summary_model, max_tokens=2048
+                )
                 summary_phase = run_m3c_summary_phase(
                     session,
                     run_id,
                     dry_run=dry_run,
                     accept_partial=accept_partial,
+                    llm=summary_llm,
                 )
                 session.commit()
                 gate = summary_phase.get("summary_gate_result") or {}
@@ -299,11 +374,19 @@ class DailyProductionRuntime:
                         resumed=True,
                     )
 
+                eval_llm = None if dry_run else _live_llm_client(
+                    model=self.settings.evaluation_model, max_tokens=2048
+                )
+                select_llm = None if dry_run else _live_llm_client(
+                    model=self.settings.editorial_model, max_tokens=16384
+                )
                 selection_phase = run_m3d_selection_phase(
                     session,
                     run_id,
                     dry_run=dry_run,
                     accept_partial=accept_partial,
+                    eval_llm=eval_llm,
+                    select_llm=select_llm,
                 )
                 session.commit()
                 egate = selection_phase.get("evaluation_gate_result") or {}
@@ -352,6 +435,70 @@ class DailyProductionRuntime:
         finally:
             if lock is not None:
                 lock.release()
+
+    def _run_live_collect(
+        self,
+        run_id: str,
+        *,
+        accept_gap: bool,
+        accept_partial: bool = False,
+    ) -> dict[str, Any]:
+        """MCP incremental collect for all enabled watchlist accounts."""
+        config = load_watchlist(Path(self.settings.watchlist_path))
+        accounts = filter_accounts(config, handles=None, enabled_only=True)
+
+        cursor_store: RedisCursorStore | None = None
+        sync_redis = True
+        try:
+            client = connect_redis(self.settings.redis_url)
+            client.ping()
+            cursor_store = RedisCursorStore(
+                client, key_prefix=self.settings.cursor_key_prefix
+            )
+        except Exception as exc:  # noqa: BLE001
+            sync_redis = False
+            cursor_store = None
+            print(
+                f"Redis unavailable for live collect ({type(exc).__name__}); "
+                "continuing without cursor sync"
+            )
+
+        async def _collect_with_client() -> Any:
+            async with XNewsMCPClient() as mcp:
+                return await run_collect_accounts_loop(
+                    client=mcp,
+                    accounts=accounts,
+                    run_id=run_id,
+                    session_factory=self.session_factory,
+                    cursor_store=cursor_store,
+                    accept_gap=accept_gap,
+                    accept_partial=accept_partial,
+                    sync_redis=sync_redis,
+                )
+
+        result = asyncio.run(_collect_with_client())
+        account_statuses = {}
+        new_post_count = 0
+        for outcome in result.account_outcomes:
+            status = (
+                outcome.scan.collection_status
+                if outcome.scan
+                else "failed_retryable"
+            )
+            account_statuses[outcome.handle] = status
+            new_post_count += len(outcome.normalized_posts)
+
+        return {
+            "collection_complete": result.collection_complete,
+            "cursor_sync_complete": result.cursor_sync_complete,
+            "paused_reason": result.paused_reason,
+            "fatal_error": result.fatal_error,
+            "account_statuses": account_statuses,
+            "new_post_count": new_post_count,
+            "persist_count": len(result.persist_results),
+            "outbox_sync": result.outbox_sync,
+            "account_count": len(accounts),
+        }
 
     def _finish_paused(
         self,

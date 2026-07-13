@@ -154,14 +154,18 @@ pip install -e ".[dev]"
 # 薄主图 dry-run（不访问 X / 不强制 DB）
 python -m app.cli daily dry-run
 
-# 创建 PG 表（需要 CONNOR_DATABASE_URL）
+# 确保专用库 + 创建 PG 表（默认 connor_daily，避免与旧 connor.runs 冲突）
+python scripts/ensure_daily_db.py
 python -m app.cli daily init-db
 
 # 导入 data/x_watchlist_cursors.json → Redis（需要 CONNOR_REDIS_URL）
 python -m app.cli daily import-cursors
+
+# 本地全流程 debug（golden seed → summarize → evaluate → select → dry graph）
+python scripts/debug_daily_e2e.py
 ```
 
-环境变量：`CONNOR_DATABASE_URL`、`CONNOR_REDIS_URL`（可选覆盖 watchlist / cursor 路径）。
+环境变量：`CONNOR_DATABASE_URL`（默认 `.../connor_daily`）、`CONNOR_REDIS_URL`（可选覆盖 watchlist / cursor 路径）。Redis 未启动时 cursor sync 可跳过，dry e2e 仍可跑通。
 
 ## 安全与限制
 

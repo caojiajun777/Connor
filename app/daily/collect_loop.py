@@ -48,6 +48,7 @@ async def run_collect_accounts_loop(
     accept_gap: bool = False,
     now: datetime | None = None,
     sync_redis: bool = True,
+    accept_partial: bool = False,
 ) -> CollectLoopResult:
     """Per-account: load cursor → collect → PG commit → optional Redis outbox sync."""
     result = CollectLoopResult()
@@ -157,6 +158,9 @@ async def run_collect_accounts_loop(
         status = outcome.scan.collection_status if outcome.scan else CollectionStatus.FAILED_RETRYABLE.value
         if status in TERMINAL_BLOCKING:
             if status == CollectionStatus.KNOWN_DATA_GAP.value and accept_gap:
+                continue
+            # Soft-fail empty/transient accounts when operator accepts partial coverage.
+            if status == CollectionStatus.FAILED_RETRYABLE.value and accept_partial:
                 continue
             blocking.append(f"{outcome.handle}:{status}")
 
