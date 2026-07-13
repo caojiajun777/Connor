@@ -49,13 +49,33 @@ def test_normalize_mcp_post(sample_account) -> None:
         "repost_label": "2",
         "like_label": "1.5K",
         "view_label": "20K",
+        "has_media": True,
+        "media": [
+            {
+                "url": "https://pbs.twimg.com/media/abc.jpg",
+                "media_type": "image",
+                "alt_text": "UI screenshot",
+            }
+        ],
+        "quoted_text": "nested claim",
+        "quoted_url": "https://x.com/other/status/99",
+        "quoted_handle": "other",
+        "link_card_title": "Docs",
     }
     post = normalize_mcp_post(raw, sample_account, run_id="run-abc")
     assert post is not None
     assert post.post_id == "42"
     assert post.is_pinned is True
-    assert post.post_type == "original"
+    assert post.post_type == "quote"
     assert post.engagement.likes == 1500
     assert post.engagement.views == 20000
     assert post.external_links == ["https://openai.com/blog"]
     assert post.source_type == "official"
+    assert post.watchlist_handle == "OpenAI"
+    assert post.social_context == "Pinned"
+    assert post.has_media is True
+    assert post.media[0].alt_text == "UI screenshot"
+    assert post.quoted_post is not None
+    assert post.quoted_post.text == "nested claim"
+    assert post.quoted_post.post_id == "99"
+    assert post.link_card_title == "Docs"

@@ -137,6 +137,117 @@ async def test_collect_accounts_isolates_per_account_errors(sample_account, empl
 
 
 @pytest.mark.asyncio
+async def test_collect_empty_mcp_posts_retries_then_fails(sample_account, monkeypatch) -> None:
+    calls = {"n": 0}
+
+    class FakeClient:
+        async def profile_posts(self, handle: str, *, limit: int = 20, offset: int = 0):
+            calls["n"] += 1
+            return {"posts": [], "has_more": False, "count": 0}
+
+    async def _no_sleep(_seconds: float) -> None:
+        return None
+
+    monkeypatch.setattr("app.x_watchlist.collector.asyncio.sleep", _no_sleep)
+
+    batch = await collect_accounts(
+        FakeClient(),  # type: ignore[arg-type]
+        [sample_account],
+        run_id="run-empty",
+        window_start=datetime(2026, 7, 10, tzinfo=timezone.utc),
+        window_end=datetime(2026, 7, 12, tzinfo=timezone.utc),
+    )
+    assert calls["n"] == 3  # 1 + EMPTY_POSTS_MAX_RETRIES
+    assert batch.account_results[0].success is False
+    assert batch.account_results[0].raw_count == 0
+    assert batch.account_results[0].empty_window is False
+    assert batch.account_results[0].reason_code == "mcp_empty_posts"
+    assert batch.account_errors[0].reason_code == "mcp_empty_posts"
+
+
+@pytest.mark.asyncio
+async def test_collect_paginates_past_retain_count_until_window_edge(sample_account) -> None:
+    """Must keep paginating after 10 in-window posts until older-than-window appears."""
+    calls = {"n": 0}
+
+    class FakeClient:
+        async def profile_posts(self, handle: str, *, limit: int = 20, offset: int = 0):
+            calls["n"] += 1
+            if offset == 0:
+                posts = [
+                    {
+                        "post_id": str(100 - i),
+                        "url": f"https://x.com/OpenAI/status/{100 - i}",
+                        "author_handle": "OpenAI",
+                        "author_name": "OpenAI",
+                        "created_at": f"2026-07-11T{i:02d}:00:00.000Z",
+                        "text": f"in-window-{i}",
+                    }
+                    for i in range(20)
+                ]
+                return {"posts": posts, "has_more": True, "next_offset": 20, "count": 20}
+            posts = [
+                {
+                    "post_id": "9",
+                    "url": "https://x.com/OpenAI/status/9",
+                    "author_handle": "OpenAI",
+                    "author_name": "OpenAI",
+                    "created_at": "2026-01-01T12:00:00.000Z",
+                    "text": "older than window",
+                }
+            ]
+            return {"posts": posts, "has_more": False, "next_offset": None, "count": 1}
+
+    batch = await collect_accounts(
+        FakeClient(),  # type: ignore[arg-type]
+        [sample_account],
+        run_id="run-pages",
+        window_start=datetime(2026, 7, 10, tzinfo=timezone.utc),
+        window_end=datetime(2026, 7, 12, tzinfo=timezone.utc),
+        max_posts_override=10,
+    )
+    assert calls["n"] == 2
+    assert batch.account_results[0].success is True
+    assert batch.account_results[0].raw_count == 21
+    assert batch.account_results[0].page_incomplete is False
+    assert batch.account_results[0].in_window_count == 20
+
+
+@pytest.mark.asyncio
+async def test_collect_all_posts_outside_window_is_no_posts_in_window(sample_account) -> None:
+    class FakeClient:
+        async def profile_posts(self, handle: str, *, limit: int = 20, offset: int = 0):
+            return {
+                "posts": [
+                    {
+                        "post_id": "9",
+                        "url": "https://x.com/OpenAI/status/9",
+                        "author_handle": "OpenAI",
+                        "author_name": "OpenAI",
+                        "created_at": "2026-01-01T12:00:00.000Z",
+                        "text": "old post outside window",
+                    }
+                ],
+                "has_more": False,
+                "count": 1,
+            }
+
+    batch = await collect_accounts(
+        FakeClient(),  # type: ignore[arg-type]
+        [sample_account],
+        run_id="run-old",
+        window_start=datetime(2026, 7, 10, tzinfo=timezone.utc),
+        window_end=datetime(2026, 7, 12, tzinfo=timezone.utc),
+    )
+    result = batch.account_results[0]
+    assert result.success is True
+    assert result.raw_count == 1
+    assert result.empty_window is True
+    assert result.fetch_returned_empty is False
+    assert result.reason_code == "no_posts_in_window"
+
+
+@pytest.mark.asyncio
 async def test_collect_accounts_rethrows_fatal(sample_account) -> None:
     class FakeClient:
         async def profile_posts(self, handle: str, *, limit: int = 20, offset: int = 0):

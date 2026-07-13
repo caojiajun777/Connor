@@ -6,21 +6,21 @@ defaults:
     include_quotes: true
     include_replies: true
     include_reposts: true
-    max_posts_per_run: 10
+    max_posts_per_run: 0
     priority: P0
   employee:
     include_originals: true
     include_quotes: true
     include_replies: true
     include_reposts: true
-    max_posts_per_run: 10
+    max_posts_per_run: 0
     priority: P0
   leak:
     include_originals: true
     include_quotes: true
     include_replies: true
     include_reposts: true
-    max_posts_per_run: 10
+    max_posts_per_run: 0
     priority: P1
 
 accounts:
@@ -128,8 +128,9 @@ accounts:
     source_type: employee
   - handle: OfficialLoganK
     display_name: Logan Kilpatrick
-    organization: OpenAI
+    organization: Google
     source_type: employee
+    notes: "Formerly OpenAI; currently Google AI Studio / Gemini. Verify periodically."
   - handle: arthurmensch
     display_name: Arthur Mensch
     organization: Mistral

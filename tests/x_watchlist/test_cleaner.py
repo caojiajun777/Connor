@@ -40,7 +40,46 @@ def test_clean_posts_keeps_all_types_filters_window_and_caps(sample_account, win
     assert result.stats.replies_removed == 0
 
 
-def test_clean_posts_caps_at_ten_newest(sample_account, window) -> None:
+def test_clean_posts_default_unlimited_keeps_all_in_window(sample_account, window) -> None:
+    start, end = window
+    posts = [
+        make_post(
+            post_id=str(i),
+            published_at=f"2026-07-11T{i:02d}:00:00+00:00",
+            text=f"post-{i}",
+        )
+        for i in range(1, 13)
+    ]
+    # sample_account.max_posts_per_run=10 still caps unless we use unlimited account
+    sample_account.max_posts_per_run = 0
+    result = clean_posts(
+        posts,
+        accounts_by_handle={"openai": sample_account},
+        window_start=start,
+        window_end=end,
+        max_posts_per_account=0,
+    )
+    assert len(result.posts) == 12
+    assert result.stats.truncated_to_limit == 0
+
+
+def test_clean_posts_keeps_empty_text_with_url(sample_account, window) -> None:
+    start, end = window
+    post = make_post(post_id="77", published_at="2026-07-11T12:00:00+00:00", text="")
+    post.has_media = True
+    post.likely_media_only = True
+    result = clean_posts(
+        [post],
+        accounts_by_handle={"openai": sample_account},
+        window_start=start,
+        window_end=end,
+        max_posts_per_account=0,
+    )
+    assert len(result.posts) == 1
+    assert result.posts[0].likely_media_only is True
+
+
+def test_clean_posts_caps_when_limit_set(sample_account, window) -> None:
     start, end = window
     posts = [
         make_post(

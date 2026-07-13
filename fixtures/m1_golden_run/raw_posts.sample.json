@@ -7,6 +7,18 @@
     "created_at": "2026-07-09T17:41:57.000Z",
     "text": "Introducing ChatGPT Work, a new agent in ChatGPT powered by Codex and GPT-5.6.\n\nIt can take action across your apps and files, stay with a project for hours if needed, and turn a goal into finished work.\n\nIt’s a whole new way to get work done.",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "blob:https://x.com/800bfbe5-b314-4123-9121-eb66151d3857",
+        "media_type": "video",
+        "alt_text": "Embedded video"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "OpenAI",
     "_watchlist_source_type": "official"
   },
@@ -18,6 +30,12 @@
     "created_at": "2026-07-11T02:24:43.000Z",
     "text": "GPT-Live is now fully rolled out to all ChatGPT users globally. \n\nWe're also doubling everyone's voice usage limit for the whole weekend so you can try more of it. \n\nHave fun!",
     "social_context": "OpenAI reposted",
+    "has_media": false,
+    "media": [],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "OpenAI",
     "_watchlist_source_type": "official"
   },
@@ -29,6 +47,23 @@
     "created_at": "2026-07-09T19:00:30.000Z",
     "text": "OpenAI Build Week is here.\n\nThe challenge starts July 13. Across the week, join live sessions and community events with builders around the world.\n\nRegistration is open.\nBring the idea sitting in your backlog.\nBuild it with Codex.",
     "social_context": "Pinned",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HMztYlTaUAAHw3A.jpg",
+        "media_type": "image",
+        "alt_text": null
+      },
+      {
+        "url": "blob:https://x.com/0ab24370-f80b-4124-92f2-5db0ce501dba",
+        "media_type": "video",
+        "alt_text": "Embedded video"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "OpenAIDevs",
     "_watchlist_source_type": "official"
   },
@@ -40,6 +75,18 @@
     "created_at": "2026-07-11T19:14:55.000Z",
     "text": "",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HM93NdYbQAAvlOH?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Article cover image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "OpenAIDevs",
     "_watchlist_source_type": "official"
   },
@@ -51,6 +98,23 @@
     "created_at": "2026-07-06T17:34:58.000Z",
     "text": "New Anthropic research: A global workspace in language models.\n\nOf everything happening in your brain right now, only a tiny fraction is consciously accessible—thoughts you can describe, hold in mind, and reason with.\n\nWe found a strikingly similar divide inside Claude.",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HMj8zKXXoAAohgS.jpg",
+        "media_type": "image",
+        "alt_text": null
+      },
+      {
+        "url": "blob:https://x.com/7cb6006e-3272-4ca5-a8e9-0ad44c0632f4",
+        "media_type": "video",
+        "alt_text": "Embedded video"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "AnthropicAI",
     "_watchlist_source_type": "official"
   },
@@ -62,40 +126,64 @@
     "created_at": "2026-07-09T17:31:58.000Z",
     "text": "There’s hope in hard questions.",
     "social_context": "Anthropic reposted",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HMzYzrcXMAAeKQI.jpg",
+        "media_type": "image",
+        "alt_text": null
+      },
+      {
+        "url": "blob:https://x.com/1a082aec-6822-44ba-a625-78ddf685a05d",
+        "media_type": "video",
+        "alt_text": "Embedded video"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "AnthropicAI",
     "_watchlist_source_type": "official"
   },
   {
-    "post_id": "2075271759289303522",
-    "url": "https://x.com/claudeai/status/2075271759289303522",
+    "post_id": "2076351399999557669",
+    "url": "https://x.com/claudeai/status/2076351399999557669",
     "author_name": "Claude",
     "author_handle": "@claudeai",
-    "created_at": "2026-07-09T17:31:58.000Z",
-    "text": "There’s hope in hard questions.",
+    "created_at": "2026-07-12T17:02:05.000Z",
+    "text": "We're extending Claude Fable 5 access on all paid plans, as well as keeping Claude Code’s weekly rate limits 50% higher, through July 19.",
     "social_context": null,
+    "has_media": false,
+    "media": [],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "claudeai",
     "_watchlist_source_type": "official"
   },
   {
-    "post_id": "2075271760572760241",
-    "url": "https://x.com/claudeai/status/2075271760572760241",
+    "post_id": "2076351401006154204",
+    "url": "https://x.com/claudeai/status/2076351401006154204",
     "author_name": "Claude",
     "author_handle": "@claudeai",
-    "created_at": "2026-07-09T17:31:59.000Z",
-    "text": "All voices featured in this film are from real people we’ve spoken with. \n\nLearn more about the initiative here:",
+    "created_at": "2026-07-12T17:02:05.000Z",
+    "text": "As before, you can use up to half of your weekly usage limit on Fable 5. After that, you can continue using Fable 5 with usage credits, or switch to another model to keep working within your remaining limits.\n\nMore details here:",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/card_img/2076090994819518464/7USG8M_I?format=png&name=small",
+        "media_type": "image",
+        "alt_text": null
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": "Claude Fable 5 promotional access | Claude Help Center",
     "_watchlist_handle": "claudeai",
-    "_watchlist_source_type": "official"
-  },
-  {
-    "post_id": "2074513661750546762",
-    "url": "https://x.com/GoogleDeepMind/status/2074513661750546762",
-    "author_name": "Google DeepMind",
-    "author_handle": "@GoogleDeepMind",
-    "created_at": "2026-07-07T15:19:34.000Z",
-    "text": "We’re unveiling a new way to converse with the ancient world.\n\nBy grounding Gemini directly in our expert models Aeneas and Ithaca, our Predicting the Past Skill in Google \n@antigravity\n lets historians study Greek and Latin texts using plain English.",
-    "social_context": null,
-    "_watchlist_handle": "GoogleDeepMind",
     "_watchlist_source_type": "official"
   },
   {
@@ -106,6 +194,46 @@
     "created_at": "2026-07-10T16:36:52.000Z",
     "text": "A model’s chain of thought acts like a scratch pad, offering a window into its reasoning. \n\nOn the latest episode of our podcast, host \n@fryrsquared\n sits down with \n@NeelNanda5\n to explore interpretability – the science of reverse engineering how neural networks learn and think.",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HM4V8NqWkAAxznf.jpg",
+        "media_type": "image",
+        "alt_text": null
+      },
+      {
+        "url": "blob:https://x.com/2a2a3fa3-096f-4b07-8858-bce537d83475",
+        "media_type": "video",
+        "alt_text": "Embedded video"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
+    "_watchlist_handle": "GoogleDeepMind",
+    "_watchlist_source_type": "official"
+  },
+  {
+    "post_id": "2075620285923905602",
+    "url": "https://x.com/GoogleDeepMind/status/2075620285923905602",
+    "author_name": "Google DeepMind",
+    "author_handle": "@GoogleDeepMind",
+    "created_at": "2026-07-10T16:36:53.000Z",
+    "text": "Watch → \nhttps://\ngoo.gle/4pxlGEh\nSpotify → \nhttps://\ngoo.gle/4f89R2a\nApple Podcasts → \nhttps://\ngoo.gle/4fpWThL\nOr listen wherever you get your podcasts!",
+    "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/card_img/2075645081076527104/30Fug_BT?format=jpg&name=240x240",
+        "media_type": "image",
+        "alt_text": null
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": "youtube.com",
     "_watchlist_handle": "GoogleDeepMind",
     "_watchlist_source_type": "official"
   },
@@ -117,6 +245,12 @@
     "created_at": "2026-07-10T15:53:15.000Z",
     "text": "Step into the map with the Street View grounding feature in Project Genie from \n@GoogleDeepmind\n and \n@GoogleLabs\n.\n\nAnnounced at I/O, this research prototype uses locations from \n@GoogleMaps\n Street View as a foundation, letting you generate and explore interactive, 360-degree virtual",
     "social_context": null,
+    "has_media": false,
+    "media": [],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "GoogleAI",
     "_watchlist_source_type": "official"
   },
@@ -128,6 +262,12 @@
     "created_at": "2026-07-01T13:58:00.000Z",
     "text": "As generative AI tools continue to evolve, we believe it's more important than ever to know what's AI-generated and what isn't. That’s why \n@GoogleDeepMind\n launched SynthID in 2023—a technology that adds a hidden digital watermark to AI content.\n\nHere’s a summary of SynthID’s",
     "social_context": null,
+    "has_media": false,
+    "media": [],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "GoogleAI",
     "_watchlist_source_type": "official"
   },
@@ -139,6 +279,23 @@
     "created_at": "2026-06-17T16:41:35.000Z",
     "text": "Show off your team loyalty and turn your selfies into custom trading cards, murals, cartoons, and more with the new Nano Banana 2 templates in Gemini.",
     "social_context": "Pinned",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HLB4Q5-agAQHNsA.jpg",
+        "media_type": "image",
+        "alt_text": null
+      },
+      {
+        "url": "blob:https://x.com/f9921479-7cfc-441b-9128-024e87083270",
+        "media_type": "video",
+        "alt_text": "Embedded video"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "GeminiApp",
     "_watchlist_source_type": "official"
   },
@@ -150,6 +307,18 @@
     "created_at": "2026-07-10T15:05:29.000Z",
     "text": "Update on \n@GeminiApp\n Trusted Testers Program:\n\nWe've onboarded the 1st cohort (below) and sent out some invites for Challenge #1: testing unreleased features coming soon in our macOS app.\n\nMore invites and challenges dropping soon, keep an eye on your inbox if you're matched!",
     "social_context": "Google Gemini reposted",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HK5DsZdWQAA8rWe?format=jpg&name=900x900",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": "Want unreleased @GeminiApp features before anyone else? Love breaking, testing, and shaping new tech?\n\nWe're opening a limited number of slots for power users to join the Gemini Trusted Tester program.\n\nSign up here: \nhttp://\ngoo.gle/4onCRHq",
+    "quoted_url": "https://x.com/joshwoodward/status/2066664862671921259/photo/1",
+    "quoted_handle": "joshwoodward",
+    "link_card_title": null,
     "_watchlist_handle": "GeminiApp",
     "_watchlist_source_type": "official"
   },
@@ -161,6 +330,23 @@
     "created_at": "2026-03-22T03:41:50.000Z",
     "text": "In order to understand the universe, you must explore the universe → \nhttp://\nx.ai/careers",
     "social_context": "Pinned",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/amplify_video_thumb/2035562419754344448/img/OGwU4IItzaE2gUME.jpg",
+        "media_type": "image",
+        "alt_text": null
+      },
+      {
+        "url": "blob:https://x.com/9b850d8f-20ca-4107-bbc5-c4491bdc1904",
+        "media_type": "video",
+        "alt_text": "Embedded video"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "xai",
     "_watchlist_source_type": "official"
   },
@@ -172,6 +358,12 @@
     "created_at": "2026-07-10T15:41:13.000Z",
     "text": "RT \n@grok\n: Grok 4.5 is now available to try on the free tier. Use Grok Build with any X or SuperGrok account.\n\nWe’re excited to hear your fe…",
     "social_context": null,
+    "has_media": false,
+    "media": [],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "xai",
     "_watchlist_source_type": "official"
   },
@@ -183,6 +375,18 @@
     "created_at": "2026-07-09T14:10:37.000Z",
     "text": "We’re excited to introduce Muse Spark 1.1, a significant upgrade from the first Muse Spark model we released earlier this year.\n\nAlong with this release, we are launching a public preview of the new Meta Model API where developers can access Muse Spark 1.1.\n\nThe model is also",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HMynMisbMAAntmz?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "AIatMeta",
     "_watchlist_source_type": "official"
   },
@@ -194,6 +398,33 @@
     "created_at": "2026-07-09T19:53:11.000Z",
     "text": "We gave a few leaders early access to Muse Spark 1.1, here's what they had to say:",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HMz47EaaoAA5Yn0?format=png&name=360x360",
+        "media_type": "image",
+        "alt_text": "Image"
+      },
+      {
+        "url": "https://pbs.twimg.com/media/HMz47EZaYAAWotQ?format=png&name=360x360",
+        "media_type": "image",
+        "alt_text": "Image"
+      },
+      {
+        "url": "https://pbs.twimg.com/media/HMz47EZbMAATPiZ?format=png&name=360x360",
+        "media_type": "image",
+        "alt_text": "Image"
+      },
+      {
+        "url": "https://pbs.twimg.com/media/HMz47EXbsAAbUaD?format=png&name=360x360",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "AIatMeta",
     "_watchlist_source_type": "official"
   },
@@ -205,6 +436,18 @@
     "created_at": "2026-04-26T16:35:11.000Z",
     "text": "DeepSeek Input Cache Price Drop!\n\nEffective immediately, the price for input cache hits across the ENTIRE DeepSeek API series is reduced to just 1/10th of the original price! Build more efficiently for less.\n\nReminder: The DeepSeek-V4-Pro 75% OFF promotion is still active",
     "social_context": "Pinned",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HG2Fzg4bUAAXN5S?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "deepseek_ai",
     "_watchlist_source_type": "official"
   },
@@ -216,6 +459,23 @@
     "created_at": "2026-05-22T16:01:03.000Z",
     "text": "We are making our discount permanent! \n\nEnjoy building with DeepSeek-V4-Pro and bring your innovative ideas to life!",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HI7xPnWbgAAW4UO?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      },
+      {
+        "url": "https://pbs.twimg.com/media/HHCeB16bIAAGQeE?format=jpg&name=240x240",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": "The DeepSeek-V4-Pro discount has been extended until May 31, 2026, 15:59 UTC!  x.com/deepseek_ai/st…",
+    "quoted_url": "https://x.com/deepseek_ai/status/2049312932014813344/photo/1",
+    "quoted_handle": "deepseek_ai",
+    "link_card_title": null,
     "_watchlist_handle": "deepseek_ai",
     "_watchlist_source_type": "official"
   },
@@ -227,6 +487,18 @@
     "created_at": "2026-06-01T17:54:18.000Z",
     "text": "Introducing Qwen3.7-Plus — a multimodal agent model that unifies vision and language into one versatile agent foundation.\n\n Multimodal interactive hybrid agent: unified GUI & CLI operation across visual and text tasks\n Versatile coding agent & productivity assistant with",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HJvxXDCbsAAUdpK?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "Alibaba_Qwen",
     "_watchlist_source_type": "official"
   },
@@ -238,6 +510,18 @@
     "created_at": "2026-06-24T09:52:43.000Z",
     "text": "Meet  Qwen-AgentWorld — a native language world model that simulates 7 agent environments (MCP, Search, Terminal, SWE, Web, OS, Android) within a single model. Environment modeling is the training objective from day one, not a post-hoc adaptation.\n\n LLMs are trained to be",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HLkfslHWsAAxwe3?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "Alibaba_Qwen",
     "_watchlist_source_type": "official"
   },
@@ -249,6 +533,23 @@
     "created_at": "2026-07-09T08:15:52.000Z",
     "text": "The Solutions team \n@MistralAI\n is hiring globally!\n\nIf you’re entrepreneurial, hands-on, and want to shape how enterprises adopt AI, let’s talk.\n\nApply: \nhttps://\nmistral.ai/careers/?utm_s\nource=linkedin&utm_medium=social&utm_campaign=global_recruiting\n…",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/amplify_video_thumb/2075131553491849216/img/6DShQzmtf7t_LtAW.jpg",
+        "media_type": "image",
+        "alt_text": null
+      },
+      {
+        "url": "blob:https://x.com/8ec576d7-74a4-42bf-a6e4-53d7f7555085",
+        "media_type": "video",
+        "alt_text": "Embedded video"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "MistralAI",
     "_watchlist_source_type": "official"
   },
@@ -260,6 +561,23 @@
     "created_at": "2026-07-08T14:01:07.000Z",
     "text": "Announcing Robostral Navigate, our first model for embodied navigation: an 8B robotics navigation model that guides robots to autonomously perform tasks specified with natural language. Single RGB camera. State-of-the-art on R2R-CE.",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/amplify_video_thumb/2074853105745686528/img/Dnl5t-N13NSdRDU7.jpg",
+        "media_type": "image",
+        "alt_text": null
+      },
+      {
+        "url": "blob:https://x.com/9dd5bbf5-1f76-49d7-8235-0994ff3ca118",
+        "media_type": "video",
+        "alt_text": "Embedded video"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "MistralAI",
     "_watchlist_source_type": "official"
   },
@@ -271,6 +589,23 @@
     "created_at": "2026-06-12T10:16:02.000Z",
     "text": "Kimi-K2.7-Code, our latest coding model, is now released and open-sourced!\n\n Improved coding & agent performance over K2.6: +21.8% on Kimi Code Bench v2, +11.0% on Program Bench, and +31.5% on MLS Bench Lite.\n Reasoning efficiency: Less overthinking, with 30% lower",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HKmxoVmagAAJKj8?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      },
+      {
+        "url": "https://pbs.twimg.com/media/HKmxpGYaUAAstZB?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "Kimi_Moonshot",
     "_watchlist_source_type": "official"
   },
@@ -282,6 +617,18 @@
     "created_at": "2026-06-24T09:46:19.000Z",
     "text": "The Kimi API is now live on AWS Marketplace. \n\nIf your team is already running on AWS, you can now access Kimi with consolidated billing. Plus, eligible customers can apply Kimi API usage directly toward their AWS EDP commitments.\n\nBuild and scale with Kimi today:",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HLkeGIZboAAUTP8?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "Kimi_Moonshot",
     "_watchlist_source_type": "official"
   },
@@ -293,6 +640,18 @@
     "created_at": "2026-06-16T17:40:19.000Z",
     "text": "Introducing GLM-5.2: Frontier Intelligence, Open Weights\n\n- Significant improvements in coding and agentic tasks\n- Strong long-horizon capabilities with a 1M context window\n- Two levels of reasoning effort: GLM-5.2 (max) pushes the limits, while GLM-5.2 (high) strikes a strong",
     "social_context": "Pinned",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HK84LPRXQAA6x0_?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "Zai_org",
     "_watchlist_source_type": "official"
   },
@@ -304,6 +663,18 @@
     "created_at": "2026-07-03T04:53:23.000Z",
     "text": "GLM-5.2 is now selectable in Claude Code via Hugging Face Inference Providers + hf-claude. \n\nOpen models are becoming easier to plug directly into real developer workflows.",
     "social_context": "Z.ai reposted",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HMRxOQxbUAAMe_-?format=png&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "Zai_org",
     "_watchlist_source_type": "official"
   },
@@ -315,6 +686,18 @@
     "created_at": "2026-06-01T01:59:21.000Z",
     "text": "Introducing MiniMax M3: The First Open-Weights Model to Combine Three Frontier Capabilities\n\n- Coding & Agentic Frontier: 59.0% SWE-Bench Pro, 66.0% Terminal Bench 2.1, 34.8% SWE-fficiency, 28.8% KernelBench Hard, 74.2% MCP Atlas\n- MiniMax Sparse Attention scales context to 1M\n-",
     "social_context": "Pinned",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HJsWydIbIAAFAZL?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "MiniMax_AI",
     "_watchlist_source_type": "official"
   },
@@ -326,29 +709,34 @@
     "created_at": "2026-07-11T20:33:02.000Z",
     "text": "Paris made one thing clear: open models are no longer a side conversation, they’re becoming central to how frontier AI is built, and scaled. \n\nAcross RAISE week:\n\n— Linda Sheng, President of Global Business at MiniMax, joined Luca Schmid, Managing Director HSG, on the Ada",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HM-R_FHaEAANREb?format=jpg&name=360x360",
+        "media_type": "image",
+        "alt_text": "Image"
+      },
+      {
+        "url": "https://pbs.twimg.com/media/HM-R_FDacAA3xjF?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      },
+      {
+        "url": "https://pbs.twimg.com/media/HM-R_FHbIAAmNBe?format=jpg&name=360x360",
+        "media_type": "image",
+        "alt_text": "Image"
+      },
+      {
+        "url": "https://pbs.twimg.com/media/HM-R_FGbkAAybn1?format=jpg&name=360x360",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "MiniMax_AI",
-    "_watchlist_source_type": "official"
-  },
-  {
-    "post_id": "2074148098876768478",
-    "url": "https://x.com/TencentHunyuan/status/2074148098876768478",
-    "author_name": "Tencent Hy",
-    "author_handle": "@TencentHunyuan",
-    "created_at": "2026-07-06T15:06:57.000Z",
-    "text": "Hy3 is here.\n\n295B MoE. Best in its size class. Rivals trillion-scale flagships.\nReliable and affordable for most agentic usecases. \nApache 2.0. Friendly for commercial use.\nFREE API for 2 weeks → \nhttps://\nopenrouter.ai/tencent/hy3:fr\nee\n…\n\n \nhttps://\nhuggingface.co/tencent/Hy3\n \nhttps://\nhy.tencent.com/research/hy3",
-    "social_context": null,
-    "_watchlist_handle": "TencentHunyuan",
-    "_watchlist_source_type": "official"
-  },
-  {
-    "post_id": "2075510854922211597",
-    "url": "https://x.com/TencentHunyuan/status/2075510854922211597",
-    "author_name": "Tencent Hy",
-    "author_handle": "@TencentHunyuan",
-    "created_at": "2026-07-10T09:22:03.000Z",
-    "text": "Check out how this gus uses Hy3 to generate such a beautiful data analysis report. Hy3 is performing amazingly!",
-    "social_context": null,
-    "_watchlist_handle": "TencentHunyuan",
     "_watchlist_source_type": "official"
   },
   {
@@ -359,6 +747,18 @@
     "created_at": "2026-06-08T14:37:21.000Z",
     "text": "1,000+ TOKENS/S ON A 1T MODEL! \n\nWe are thrilled to release Xiaomi MiMo-V2.5-Pro-UltraSpeed in collaboration with \n@TileRT_AI\n , breaking the 1,000 tokens/s output speed on a 1 Trillion parameter model for the FIRST TIME!\n\nNot wafer-scale integration like Cerebras. Not pure",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HKS-86RbsAAE9uV?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "XiaomiMiMo",
     "_watchlist_source_type": "official"
   },
@@ -370,6 +770,23 @@
     "created_at": "2026-06-30T06:47:09.000Z",
     "text": "Open-weights are taking over — proud to see more developers building on MiMo.  \n@cline",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/amplify_video_thumb/2071610079170994176/img/ltNjttVtlk5xoc3i.jpg",
+        "media_type": "image",
+        "alt_text": null
+      },
+      {
+        "url": "blob:https://x.com/c688af93-eb0d-4036-af44-66657772e52a",
+        "media_type": "video",
+        "alt_text": "Embedded video"
+      }
+    ],
+    "quoted_text": "We’ve been impressed with GLM-5.2 and so are introducing a $9.99/month subscription to give you 2-5x discounted access to it and other open weight models like DeepSeek, Kimi, MiniMax, Mimo, Qwen.\n\nUse it on Cline CLI & IDE with $1.99 special promo if sign up via: npm i -g cline",
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "XiaomiMiMo",
     "_watchlist_source_type": "official"
   },
@@ -381,6 +798,12 @@
     "created_at": "2026-07-01T04:00:52.000Z",
     "text": "MiMo Responses API is Now Available\nCompatible with the OpenAI Responses API — Codex users can integrate directly.  \nKey capabilities include streaming, function calling, deep thinking, structured output, and more.  \n\nAPI Reference → \nhttps://\nmimo.mi.com/docs/en-US/api\n/chat/responses\n… \nCodex Configuration",
     "social_context": null,
+    "has_media": false,
+    "media": [],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": "mimo.mi.com",
     "_watchlist_handle": "XiaomiMiMoDevs",
     "_watchlist_source_type": "official"
   },
@@ -392,6 +815,23 @@
     "created_at": "2026-06-30T06:47:09.000Z",
     "text": "Open-weights are taking over — proud to see more developers building on MiMo.  \n@cline",
     "social_context": "Xiaomi MiMo Developers reposted",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/amplify_video_thumb/2071610079170994176/img/ltNjttVtlk5xoc3i.jpg",
+        "media_type": "image",
+        "alt_text": null
+      },
+      {
+        "url": "blob:https://x.com/981d0b46-51f6-46a3-8d34-1ced928c00b8",
+        "media_type": "video",
+        "alt_text": "Embedded video"
+      }
+    ],
+    "quoted_text": "We’ve been impressed with GLM-5.2 and so are introducing a $9.99/month subscription to give you 2-5x discounted access to it and other open weight models like DeepSeek, Kimi, MiniMax, Mimo, Qwen.\n\nUse it on Cline CLI & IDE with $1.99 special promo if sign up via: npm i -g cline",
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "XiaomiMiMoDevs",
     "_watchlist_source_type": "official"
   },
@@ -403,6 +843,18 @@
     "created_at": "2026-05-29T00:00:01.000Z",
     "text": "Step 3.7 Flash is here: The new frontier is agent efficiency.\n\n#1 ClawEval-1.1 (67.1), #1 SimpleVQA Search (79.2), #2 SWE-PRO (56.3), 95.3 on V* Python. Open weights under Apache 2.0.\n\nBuilt for agentic, coding, search, and multimodal workflows — balancing speed, cost, and",
     "social_context": "Pinned",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HJcdzQdbcAAcQki?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "StepFun_ai",
     "_watchlist_source_type": "official"
   },
@@ -414,6 +866,18 @@
     "created_at": "2026-06-30T13:01:02.000Z",
     "text": "Step 3.7 Flash is currently top 10 on \n@OpenRouter\n this month, with 4.29T tokens routed.\n\nBuilders are pushing it through real agent runs, coding tasks, and long-context workflows.\n\nKeep sending the hard stuff.",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HMEEWGabMAAhoFT?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "StepFun_ai",
     "_watchlist_source_type": "official"
   },
@@ -425,6 +889,18 @@
     "created_at": "2026-06-26T09:50:20.000Z",
     "text": "Rspack 2.1 is here!\n\n 16% faster builds than 2.0\n Rust React Compiler: 7–13× faster than Babel\n Improved built-in CSS\n import.meta.glob\n TypeScript 7 RC support\n Source Phase Imports",
     "social_context": "ByteDance Open Source reposted",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HLuxIF3bMAEkNDU?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "ByteDanceOSS",
     "_watchlist_source_type": "official"
   },
@@ -436,28 +912,58 @@
     "created_at": "2026-06-07T14:49:01.000Z",
     "text": "One skill. Five platforms.\n\nMidscene Skills gives Claude Code & Codex eyes + hands across browser, desktop, Android, iOS and HarmonyOS.\nSame chat-driven prompt. No MCP setup.",
     "social_context": "ByteDance Open Source reposted",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HKOAfuxaEAAoEju?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "ByteDanceOSS",
     "_watchlist_source_type": "official"
   },
   {
-    "post_id": "2076145711922696371",
-    "url": "https://x.com/thsottiaux/status/2076145711922696371",
+    "post_id": "2076495156757577895",
+    "url": "https://x.com/thsottiaux/status/2076495156757577895",
     "author_name": "Tibo",
     "author_handle": "@thsottiaux",
-    "created_at": "2026-07-12T03:24:45.000Z",
-    "text": "At different times you complained about speed, code slop, frontend quality, ... With each release we improve and GPT 5.6 Sol is  \n\nFast and token efficient\nHardcore at back-end dev\nGreat at front-end\nDoes not use useEffect everywhere \n\nWhat is next?",
+    "created_at": "2026-07-13T02:33:19.000Z",
+    "text": "Updates for Codex and ChatGPT Work users. No nerfing, only good stuff!\n\n- We have landed inference optimizations and are passing down savings to all the subscriptions for GPT-5.6 Sol. That should result in around 10% more usage on its own.\n- We noticed that by changing the",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HNEZzDPXoAA1RHc?format=png&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": "OpenAI has reduced GPT-5.6 Sol's thinking budgets in an effort to make the model more efficient\n\nThey essentially bumped everyone's reasoning down by 1... so if you were running Sol Extra High, you now have to set it to Max to get the same effort \n\nSo we basically don't have Max  x.com/Lentils80/stat…",
+    "quoted_url": "https://x.com/FixlationAI/status/2076469274441380349/photo/1",
+    "quoted_handle": "FixlationAI",
+    "link_card_title": null,
     "_watchlist_handle": "thsottiaux",
     "_watchlist_source_type": "employee"
   },
   {
-    "post_id": "2076119366647894371",
-    "url": "https://x.com/thsottiaux/status/2076119366647894371",
+    "post_id": "2076459871021736245",
+    "url": "https://x.com/thsottiaux/status/2076459871021736245",
     "author_name": "Tibo",
     "author_handle": "@thsottiaux",
-    "created_at": "2026-07-12T01:40:04.000Z",
-    "text": "If you aren't yet bold enough to install the Codex app, you can stay in the presence of your orange crab and point it at GPT 5.6 Sol. Takes 5 minutes. Kudos to Theo for explaining one of the ways to get this done.\n\nStep 1: Install CLIProxyAPI\nStep 2: Connect\nStep 3: Define",
+    "created_at": "2026-07-13T00:13:06.000Z",
+    "text": "Rest assured that GPT 5.6 Sol will stay in the ChatGPT subscription you pay for. Including Go, Plus and Pro subscriptions. At least until we ship an even better model.",
     "social_context": null,
+    "has_media": false,
+    "media": [],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "thsottiaux",
     "_watchlist_source_type": "employee"
   },
@@ -469,17 +975,46 @@
     "created_at": "2026-07-07T14:46:20.000Z",
     "text": "",
     "social_context": "Pinned",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HMlQWT_aAAAyg4c?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Article cover image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "gabrielchua",
     "_watchlist_source_type": "employee"
   },
   {
-    "post_id": "2076333259785637994",
-    "url": "https://x.com/gabrielchua/status/2076333259785637994",
+    "post_id": "2076589370493345897",
+    "url": "https://x.com/gabrielchua/status/2076589370493345897",
     "author_name": "Gabriel Chua",
     "author_handle": "@gabrielchua",
-    "created_at": "2026-07-12T15:50:00.000Z",
-    "text": "gpt-5.6-sol is now commanding a battalion of subagents",
+    "created_at": "2026-07-13T08:47:41.000Z",
+    "text": "wowww",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HNGG8bfaQAEr98g?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      },
+      {
+        "url": "https://pbs.twimg.com/media/HNGHA2jaoAAROHp?format=png&name=360x360",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "gabrielchua",
     "_watchlist_source_type": "employee"
   },
@@ -491,6 +1026,18 @@
     "created_at": "2025-09-17T17:51:51.000Z",
     "text": "We wrapped up this year's competition circuit with a full score on the ICPC, after achieving 6th in the IOI, a gold medal at the IMO, and 2nd in the AtCoder Heuristic contest!",
     "social_context": "Pinned",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/G1EFxbVbQAAn9_k?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": "1/n\nI’m really excited to share that our @OpenAI reasoning system got a perfect score of 12/12 during the 2025 ICPC World Finals, the premier collegiate programming competition where top university teams from around the world solve complex algorithmic problems. This would have",
+    "quoted_url": "https://x.com/MostafaRohani/status/1968360976379703569/photo/1",
+    "quoted_handle": "MostafaRohani",
+    "link_card_title": null,
     "_watchlist_handle": "markchen90",
     "_watchlist_source_type": "employee"
   },
@@ -502,6 +1049,12 @@
     "created_at": "2026-07-08T05:16:06.000Z",
     "text": "I’ll be doing a Q+A at ICML today (Wednesday) at 3-4pm as well. See you soon!",
     "social_context": null,
+    "has_media": false,
+    "media": [],
+    "quoted_text": "I'm at ICML this week and I'll be doing Q&A today (Tuesday) from 3-4pm at the @OpenAI booth with my reasoning research colleagues. Come by and ask us a question!",
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "markchen90",
     "_watchlist_source_type": "employee"
   },
@@ -513,6 +1066,18 @@
     "created_at": "2026-07-10T17:36:29.000Z",
     "text": "Claude Code on desktop now has an in-app browser.\n\nClaude can pull up docs, designs, or any other site. It can read, click through, and interact the same way it does with your local dev servers.\n\nIt's sandboxed and configurable: you choose whether sessions persist.",
     "social_context": "Boris Cherny reposted",
+    "has_media": true,
+    "media": [
+      {
+        "url": "video://2075635283211772279",
+        "media_type": "video",
+        "alt_text": null
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "bcherny",
     "_watchlist_source_type": "employee"
   },
@@ -524,7 +1089,36 @@
     "created_at": "2026-07-08T18:36:11.000Z",
     "text": "Tomorrow at 10am PT I'm hosting a live walkthrough of how we progressed from single-player Claude Code to multi-player Claude Tag. Then, we're going deep on how Claude Tag actually works.\n\nAI used to finish your sentence. Then, it wrote entire features. Now, Claude Tag can",
     "social_context": "Boris Cherny reposted",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/card_img/2074923804586090496/4KHU_9op?format=png&name=small",
+        "media_type": "image",
+        "alt_text": null
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": "How Anthropic works with Claude Tag in Slack | Webinars \\ Anthropic",
     "_watchlist_handle": "bcherny",
+    "_watchlist_source_type": "employee"
+  },
+  {
+    "post_id": "2076393038843375810",
+    "url": "https://x.com/OfficialLoganK/status/2076393038843375810",
+    "author_name": "Logan Kilpatrick",
+    "author_handle": "@OfficialLoganK",
+    "created_at": "2026-07-12T19:47:32.000Z",
+    "text": "it’s surprising to me how many people seem to not understand that great models are built with super high quality curated data\n\nfinding novel ways to create / get this data is a huge edge",
+    "social_context": null,
+    "has_media": false,
+    "media": [],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
+    "_watchlist_handle": "OfficialLoganK",
     "_watchlist_source_type": "employee"
   },
   {
@@ -535,17 +1129,12 @@
     "created_at": "2026-07-11T00:04:17.000Z",
     "text": "what a privilege it is to feel the texture of progress as we keep pushing",
     "social_context": null,
-    "_watchlist_handle": "OfficialLoganK",
-    "_watchlist_source_type": "employee"
-  },
-  {
-    "post_id": "2075598301018337773",
-    "url": "https://x.com/OfficialLoganK/status/2075598301018337773",
-    "author_name": "Logan Kilpatrick",
-    "author_handle": "@OfficialLoganK",
-    "created_at": "2026-07-10T15:09:32.000Z",
-    "text": "Today we are rolling out pretty URL’s for deployed apps in \n@GoogleAIStudio\n, each app can get a “\nhttp://\nyour-own-url.ai.studio”, for free! \n\nFree apps, free deploys, and now free pretty URLs!",
-    "social_context": null,
+    "has_media": false,
+    "media": [],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "OfficialLoganK",
     "_watchlist_source_type": "employee"
   },
@@ -557,6 +1146,12 @@
     "created_at": "2026-07-03T21:31:36.000Z",
     "text": "",
     "social_context": "Pinned",
+    "has_media": false,
+    "media": [],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "arthurmensch",
     "_watchlist_source_type": "employee"
   },
@@ -568,6 +1163,12 @@
     "created_at": "2026-07-07T14:35:53.000Z",
     "text": "It's time to get out of stealth \n\nToday, we are launching \n@monogram_ai\n and announcing our $40m seed round led by DST and Lux Capital.\n\nMonogram is the first AI app that was built around a visual interface, from the ground up.\n\nWe created a technology that generates an entire",
     "social_context": "Arthur Mensch reposted",
+    "has_media": false,
+    "media": [],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "arthurmensch",
     "_watchlist_source_type": "employee"
   },
@@ -579,6 +1180,28 @@
     "created_at": "2023-12-11T14:20:18.000Z",
     "text": "Very excited to release our second model, Mixtral 8x7B, an open weight mixture of experts model.\nMixtral matches or outperforms Llama 2 70B and GPT3.5 on most benchmarks, and has the inference speed of a 12B dense model. It supports a context length of 32k tokens. (1/n)",
     "social_context": "Pinned",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/GBEooT8X0AAqvIf?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      },
+      {
+        "url": "https://pbs.twimg.com/media/GBEop7DWEAA-ByU?format=jpg&name=360x360",
+        "media_type": "image",
+        "alt_text": "Image"
+      },
+      {
+        "url": "https://pbs.twimg.com/media/GBEorerXoAAdqGZ?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": "magnet:?xt=urn:btih:5546272da9065eddeb6fcd7ffddeef5b75be79a7&dn=mixtral-8x7b-32kseqlen&tr=udp%3A%2F%\nhttp://\n2Fopentracker.i2p.rocks%3A6969%2Fannounce&tr=http%3A%2F%https://t.co/g0m9cEUz0T%3A80%2Fannounce\n\nRELEASE a6bbd9affe0c2725c1b7410d66833e24",
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "GuillaumeLample",
     "_watchlist_source_type": "employee"
   },
@@ -590,7 +1213,36 @@
     "created_at": "2026-07-08T14:01:07.000Z",
     "text": "Announcing Robostral Navigate, our first model for embodied navigation: an 8B robotics navigation model that guides robots to autonomously perform tasks specified with natural language. Single RGB camera. State-of-the-art on R2R-CE.",
     "social_context": "Guillaume Lample @ NeurIPS 2024 reposted",
+    "has_media": true,
+    "media": [
+      {
+        "url": "blob:https://x.com/d3113dd7-d52a-4c91-b106-679d7b2c0550",
+        "media_type": "video",
+        "alt_text": "Embedded video"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "GuillaumeLample",
+    "_watchlist_source_type": "employee"
+  },
+  {
+    "post_id": "2076518226885038570",
+    "url": "https://x.com/JustinLin610/status/2076518226885038570",
+    "author_name": "Junyang Lin",
+    "author_handle": "@JustinLin610",
+    "created_at": "2026-07-13T04:04:59.000Z",
+    "text": "anything interesting recently in the opensource community?",
+    "social_context": null,
+    "has_media": false,
+    "media": [],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
+    "_watchlist_handle": "JustinLin610",
     "_watchlist_source_type": "employee"
   },
   {
@@ -601,17 +1253,12 @@
     "created_at": "2026-07-03T10:49:58.000Z",
     "text": "cool",
     "social_context": null,
-    "_watchlist_handle": "JustinLin610",
-    "_watchlist_source_type": "employee"
-  },
-  {
-    "post_id": "2072920090643947860",
-    "url": "https://x.com/JustinLin610/status/2072920090643947860",
-    "author_name": "Junyang Lin",
-    "author_handle": "@JustinLin610",
-    "created_at": "2026-07-03T05:47:17.000Z",
-    "text": "jb in exchange of pg? what?",
-    "social_context": null,
+    "has_media": false,
+    "media": [],
+    "quoted_text": "Bridgewater used their unique financial knowledge and partnered with us on @tinkerapi to fine-tune a model that helps their analysts focus on what's important. Experts improving AI that empowers experts.\n\nhttps://\nthinkingmachines.ai/news/learning-\nto-replicate-expert-judgment-in-financial-tasks/\n…",
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "JustinLin610",
     "_watchlist_source_type": "employee"
   },
@@ -623,18 +1270,299 @@
     "created_at": "2026-07-09T14:02:04.000Z",
     "text": "1/ muse spark 1.1 is an industry-competitive agentic and coding model. across many agentic evals it rivals gpt-5.5 and opus-4.8.\n\navailable now through the new meta model api and in meta ai.",
     "social_context": "Pinned",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HMynlRnacAA9K01?format=png&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
     "_watchlist_handle": "alexandr_wang",
     "_watchlist_source_type": "employee"
   },
   {
-    "post_id": "2076040063306072398",
-    "url": "https://x.com/alexandr_wang/status/2076040063306072398",
+    "post_id": "2076348827641037289",
+    "url": "https://x.com/alexandr_wang/status/2076348827641037289",
     "author_name": "Alexandr Wang",
     "author_handle": "@alexandr_wang",
-    "created_at": "2026-07-11T20:24:56.000Z",
-    "text": "muse spark can serve all your particle playground needs",
+    "created_at": "2026-07-12T16:51:51.000Z",
+    "text": "muse spark 1.1 outperforms opus, grok 4.5, and gemini on a new challenging finite model theory / theoretical cs eval",
     "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HNCVY5xXMAA4g5c?format=png&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": "I benchmarked the new models (Sol, Terra, Luna, Fable 5, Meta Muse Spark 1.1, Grok 4.5) on an induction reasoning task. \n\nThis is an updated table from yesterday, and my benchmark is described as spotlight in ICML '26.\n\nHow to read the table:\n\nThe models are given several small",
+    "quoted_url": "https://x.com/s_batzoglou/status/2076327022066901393/photo/1",
+    "quoted_handle": "s_batzoglou",
+    "link_card_title": null,
     "_watchlist_handle": "alexandr_wang",
     "_watchlist_source_type": "employee"
+  },
+  {
+    "post_id": "2068720875340210329",
+    "url": "https://x.com/LuminaXspace/status/2068720875340210329",
+    "author_name": "Lumina",
+    "author_handle": "@LuminaXspace",
+    "created_at": "2026-06-21T15:41:06.000Z",
+    "text": "New Claude Sonnet 5 leak just surfaced\n\nAnthropic appears to be prepping the next Sonnet model:\n\n· Internal codename from earlier leaks: Fennec\n· Expected as early as next week\n· Expect strong coding performance, speed, and better price/performance than Opus/Fable\n· 1M token",
+    "social_context": "Pinned",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HLWSq1AWUAA_HcE?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
+    "_watchlist_handle": "LuminaXspace",
+    "_watchlist_source_type": "leak"
+  },
+  {
+    "post_id": "2076384065863745739",
+    "url": "https://x.com/LuminaXspace/status/2076384065863745739",
+    "author_name": "Lumina",
+    "author_handle": "@LuminaXspace",
+    "created_at": "2026-07-12T19:11:53.000Z",
+    "text": "Anthropic’s internal AI roadmap may have leaked\n\nSeveral mysterious codenames and experimental features have reportedly appeared inside Anthropic’s development systems:\n\n• Capybara\n• Fennec - (thought to be sonnet 5 but not)\n• Numbat - (reportedly still in testing, unknown",
+    "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HNDMM06XoAAn7_o?format=png&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
+    "_watchlist_handle": "LuminaXspace",
+    "_watchlist_source_type": "leak"
+  },
+  {
+    "post_id": "2076591863922851884",
+    "url": "https://x.com/testingcatalog/status/2076591863922851884",
+    "author_name": "AI News | TestingCatalog",
+    "author_handle": "@testingcatalog",
+    "created_at": "2026-07-13T08:57:36.000Z",
+    "text": "Rokid has opened an Agent Store for its AI glasses!\n\n> Rokid’s AI-focused App Store for smart glasses allows users to access new capabilities by operating various AI agents.\n\n> Users can make their requests by voice, sight, or a real-world scene, and the matching agent runs and",
+    "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HNGIs-bXAAAKYkw?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
+    "_watchlist_handle": "testingcatalog",
+    "_watchlist_source_type": "leak"
+  },
+  {
+    "post_id": "2076591866829475906",
+    "url": "https://x.com/testingcatalog/status/2076591866829475906",
+    "author_name": "AI News | TestingCatalog",
+    "author_handle": "@testingcatalog",
+    "created_at": "2026-07-13T08:57:36.000Z",
+    "text": "Users can use the agents across multiple everyday scenarios, from real-time translation and navigation to meeting summaries, shopping recognition, and even reading the general mood behind a pet's sounds.\n\nRokid has provided our readers with a discount code: R3K-TESTI\n\nMore from",
+    "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/card_img/2076591237512024064/b4gfPUqJ?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": null
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": "Rokid スマートAIグラス",
+    "_watchlist_handle": "testingcatalog",
+    "_watchlist_source_type": "leak"
+  },
+  {
+    "post_id": "1809670091778207901",
+    "url": "https://x.com/ArtificialAnlys/status/1809670091778207901",
+    "author_name": "Artificial Analysis",
+    "author_handle": "@ArtificialAnlys",
+    "created_at": "2024-07-06T19:25:46.000Z",
+    "text": "Thanks for the support \n@AndrewYNg\n! Completely agree, faster token generation will become increasingly important as a greater proportion of output tokens are consumed by models, such as in multi-step agentic workflows, rather than being read by people.",
+    "social_context": "Pinned",
+    "has_media": false,
+    "media": [],
+    "quoted_text": "Shoutout to the team that built \nhttps://\nartificialanalysis.ai . Really neat site that benchmarks the speed of different LLM API providers to help developers pick which models to use. This nicely complements the LMSYS Chatbot Arena, Hugging Face open LLM leaderboards and Stanford's HELM",
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
+    "_watchlist_handle": "ArtificialAnlys",
+    "_watchlist_source_type": "analyst"
+  },
+  {
+    "post_id": "2075739735822307577",
+    "url": "https://x.com/ArtificialAnlys/status/2075739735822307577",
+    "author_name": "Artificial Analysis",
+    "author_handle": "@ArtificialAnlys",
+    "created_at": "2026-07-11T00:31:33.000Z",
+    "text": "Muse Spark 1.1 (xhigh) scores 69 on the Artificial Analysis Coding Agent Index in the Opencode harness, offering a strong blend of performance and near frontier cost-efficiency\n\nMuse Spark 1.1 lands just below GPT-5.5 (medium) in Codex (71) and ahead of Claude Opus 4.8 (medium)",
+    "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HM6CSZZbYAAE-3Q?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
+    "_watchlist_handle": "ArtificialAnlys",
+    "_watchlist_source_type": "analyst"
+  },
+  {
+    "post_id": "2076440861253218399",
+    "url": "https://x.com/simonw/status/2076440861253218399",
+    "author_name": "Simon Willison",
+    "author_handle": "@simonw",
+    "created_at": "2026-07-12T22:57:34.000Z",
+    "text": "I've seen a few people predicting that Opus 5 will be out soon and will be better than Fable 5, but have Anthropic clarified how their relative naming scheme works yet?\n\nI assumed it was Haiku < Sonnet < Opus < Fable < Mythos - but is Fable meant to go between Sonnet and Opus?",
+    "social_context": null,
+    "has_media": false,
+    "media": [],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
+    "_watchlist_handle": "simonw",
+    "_watchlist_source_type": "technical_analyst"
+  },
+  {
+    "post_id": "2076462942477037621",
+    "url": "https://x.com/simonw/status/2076462942477037621",
+    "author_name": "Simon Willison",
+    "author_handle": "@simonw",
+    "created_at": "2026-07-13T00:25:18.000Z",
+    "text": "(Meanwhile OpenAI's new Sol, Terra, Luna naming convention makes perfect sense to anyone who's familiar with the Latin names for bodies in our solar system)",
+    "social_context": null,
+    "has_media": false,
+    "media": [],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
+    "_watchlist_handle": "simonw",
+    "_watchlist_source_type": "technical_analyst"
+  },
+  {
+    "post_id": "2040423398824698310",
+    "url": "https://x.com/rasbt/status/2040423398824698310",
+    "author_name": "Sebastian Raschka",
+    "author_handle": "@rasbt",
+    "created_at": "2026-04-04T13:37:02.000Z",
+    "text": "Components of a coding agent: a little write-up on the building blocks behind coding agents, from repo context and tool use to memory and delegation.\n\nLink: \nhttps://\nmagazine.sebastianraschka.com/p/components-o\nf-a-coding-agent\n…",
+    "social_context": "Pinned",
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HFEI2mzXUAE2CHZ?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
+    "_watchlist_handle": "rasbt",
+    "_watchlist_source_type": "technical_analyst"
+  },
+  {
+    "post_id": "2075982283509571666",
+    "url": "https://x.com/rasbt/status/2075982283509571666",
+    "author_name": "Sebastian Raschka",
+    "author_handle": "@rasbt",
+    "created_at": "2026-07-11T16:35:20.000Z",
+    "text": "Upon request, here's an updated version with Grok 4.5 and Meta's Muse Spark 1.1.\n\nGrok 4.5 seems to sit at the Pareto frontier. Good bang for the buck.\n\n(Also added harness info).",
+    "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HM9e18OXgAAvD0C?format=jpg&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
+    "_watchlist_handle": "rasbt",
+    "_watchlist_source_type": "technical_analyst"
+  },
+  {
+    "post_id": "2006774538990715280",
+    "url": "https://x.com/scaling01/status/2006774538990715280",
+    "author_name": "Lisan al Gaib",
+    "author_handle": "@scaling01",
+    "created_at": "2026-01-01T17:08:28.000Z",
+    "text": "My predictions for 2026:\n\nCoding and Mathematics AGI\n - METR 50% time horizons above 24 hours - my mean estimate is 30.8 hours, 2 day time horizons possible within frontier labs when accounting for 60 day lag\n - if 2025 was the year of agents, then 2026 will be the year of",
+    "social_context": "Pinned",
+    "has_media": false,
+    "media": [],
+    "quoted_text": null,
+    "quoted_url": null,
+    "quoted_handle": null,
+    "link_card_title": null,
+    "_watchlist_handle": "scaling01",
+    "_watchlist_source_type": "leak_and_opinion"
+  },
+  {
+    "post_id": "2076465227898503184",
+    "url": "https://x.com/scaling01/status/2076465227898503184",
+    "author_name": "Lisan al Gaib",
+    "author_handle": "@scaling01",
+    "created_at": "2026-07-13T00:34:23.000Z",
+    "text": "aaaaaand cancel sub\n\nhas been fun while it lasted",
+    "social_context": null,
+    "has_media": true,
+    "media": [
+      {
+        "url": "https://pbs.twimg.com/media/HNEPQUzXQAAN5sX?format=png&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      },
+      {
+        "url": "https://pbs.twimg.com/media/HNEQBfYWoAA5JDJ?format=png&name=small",
+        "media_type": "image",
+        "alt_text": "Image"
+      }
+    ],
+    "quoted_text": "GPT-5.6 Sol's juice values (thinking budgets) have been severely degraded compared to release day\n\nIf Sol now feels faster and more \"efficient\", this is probably why\n\nTerra and Luna juice values aren't affected, so their thinking budgets are now higher than Sol's",
+    "quoted_url": "https://x.com/Lentils80/status/2076460021861187754/photo/1",
+    "quoted_handle": "Lentils80",
+    "link_card_title": null,
+    "_watchlist_handle": "scaling01",
+    "_watchlist_source_type": "leak_and_opinion"
   }
 ]

@@ -14,7 +14,7 @@ DEFAULT_RULES: dict[str, dict[str, Any]] = {
         "include_quotes": True,
         "include_replies": True,
         "include_reposts": True,
-        "max_posts_per_run": 10,
+        "max_posts_per_run": 0,
         "priority": "P0",
     },
     "employee": {
@@ -22,7 +22,7 @@ DEFAULT_RULES: dict[str, dict[str, Any]] = {
         "include_quotes": True,
         "include_replies": True,
         "include_reposts": True,
-        "max_posts_per_run": 10,
+        "max_posts_per_run": 0,
         "priority": "P0",
     },
     "leak": {
@@ -30,7 +30,7 @@ DEFAULT_RULES: dict[str, dict[str, Any]] = {
         "include_quotes": True,
         "include_replies": True,
         "include_reposts": True,
-        "max_posts_per_run": 10,
+        "max_posts_per_run": 0,
         "priority": "P1",
     },
 }
@@ -85,9 +85,10 @@ def _merge_account(raw: dict[str, Any], yaml_defaults: dict[str, dict[str, Any]]
         raise WatchlistConfigError(
             f"Account {account.handle} has invalid source_type '{account.source_type}'"
         )
-    if account.max_posts_per_run < 1 or account.max_posts_per_run > 10:
+    if account.max_posts_per_run < 0 or account.max_posts_per_run > 200:
         raise WatchlistConfigError(
-            f"Account {account.handle} max_posts_per_run must be between 1 and 10"
+            f"Account {account.handle} max_posts_per_run must be between 0 and 200 "
+            "(0 = keep all in-window posts)"
         )
     return account
 

@@ -7,8 +7,10 @@ from typing import Iterable
 from app.x_watchlist.normalizer import normalize_x_url
 from app.x_watchlist.schemas import AccountCursor, NormalizedPost, XSourceAccount
 
-# Final retain limit after time filter + tech dedupe (design default).
-DEFAULT_MAX_POSTS_PER_ACCOUNT = 10
+# 0 = keep every in-window post after tech dedupe (M2 ranks Top 20).
+DEFAULT_MAX_POSTS_PER_ACCOUNT = 0
+# Hard safety ceiling when a positive retain limit is configured.
+MAX_POSTS_PER_ACCOUNT_CAP = 200
 
 
 @dataclass
@@ -75,6 +77,13 @@ def _ensure_aware(dt: datetime) -> datetime:
     return dt
 
 
+def _resolve_max_keep(max_posts_per_account: int) -> int | None:
+    """None means unlimited; otherwise clamp to [1, MAX_POSTS_PER_ACCOUNT_CAP]."""
+    if max_posts_per_account <= 0:
+        return None
+    return max(1, min(max_posts_per_account, MAX_POSTS_PER_ACCOUNT_CAP))
+
+
 def clean_posts(
     posts: Iterable[NormalizedPost],
     *,
@@ -85,21 +94,26 @@ def clean_posts(
     max_posts_per_account: int = DEFAULT_MAX_POSTS_PER_ACCOUNT,
 ) -> CleaningResult:
     """
-    Pipeline (design order):
-      time-filter → tech dedupe → sort newest-first → retain ≤ N per account
+    Pipeline:
+      time-filter → tech dedupe → sort newest-first → optional per-account retain cap
     All post types (original/reply/quote/repost/pinned) are kept if in window.
+    Empty-text posts with a URL are kept (often media-only).
     """
     stats = CleaningStats()
     cursors_by_handle = cursors_by_handle or {}
     window_start = _ensure_aware(window_start)
     window_end = _ensure_aware(window_end)
-    max_keep = max(1, min(max_posts_per_account, 10))
 
     candidates_by_handle: dict[str, list[NormalizedPost]] = {}
     seen_keys: set[str] = set()
 
     for post in posts:
         account = accounts_by_handle.get(post.handle.lower()) or accounts_by_handle.get(post.handle)
+        # Reposts may have author handle != watchlist handle; fall back to watchlist_handle.
+        if account is None and post.watchlist_handle:
+            account = accounts_by_handle.get(post.watchlist_handle.lower()) or accounts_by_handle.get(
+                post.watchlist_handle
+            )
         if account is None:
             stats.empty_removed += 1
             continue
@@ -109,7 +123,8 @@ def clean_posts(
             stats.duplicates_removed += 1
             continue
 
-        if not post.text.strip() and not post.url:
+        # Keep media-only / empty-text posts when URL (or media) exists.
+        if not post.text.strip() and not post.url and not post.has_media:
             stats.empty_removed += 1
             continue
 
@@ -146,9 +161,14 @@ def clean_posts(
             key=lambda item: parse_iso_datetime(item.published_at) or datetime.min,
             reverse=True,
         )
-        if len(items) > max_keep:
-            stats.truncated_to_limit += len(items) - max_keep
-            items = items[:max_keep]
+        account = accounts_by_handle.get(handle_key)
+        account_limit = account.max_posts_per_run if account is not None else 0
+        # Explicit run override wins when > 0; else use account config (0=unlimited).
+        effective_limit = max_posts_per_account if max_posts_per_account > 0 else account_limit
+        keep = _resolve_max_keep(effective_limit)
+        if keep is not None and len(items) > keep:
+            stats.truncated_to_limit += len(items) - keep
+            items = items[:keep]
         retained.extend(items)
         retained_by_handle[handle_key] = len(items)
 

@@ -47,8 +47,12 @@ async def run_collect(options: CollectOptions) -> CollectRunResult:
     started_at = utc_now_iso()
     run_id = options.run_id or datetime.now().strftime("%Y%m%dT%H%M%S") + "-" + uuid.uuid4().hex[:8]
     window_start, window_end = _parse_window(options.since, options.until)
-    retain_limit = options.max_posts_per_account or DEFAULT_MAX_POSTS_PER_ACCOUNT
-    retain_limit = max(1, min(retain_limit, 10))
+    retain_limit = options.max_posts_per_account
+    if retain_limit is None:
+        retain_limit = DEFAULT_MAX_POSTS_PER_ACCOUNT
+    # 0 = unlimited; positive values are an optional safety truncate after window filter.
+    if retain_limit < 0:
+        retain_limit = 0
 
     config: WatchlistConfig = load_watchlist(options.watchlist_path)
     enabled_accounts = filter_accounts(config, handles=options.handles, enabled_only=True)
@@ -136,7 +140,7 @@ async def run_collect(options: CollectOptions) -> CollectRunResult:
                 run_id=run_id,
                 window_start=options.since,
                 window_end=options.until,
-                max_posts_override=retain_limit,
+                max_posts_override=retain_limit if retain_limit > 0 else None,
             )
         except MCPFatalSessionError:
             global_failure = True
@@ -165,10 +169,31 @@ async def run_collect(options: CollectOptions) -> CollectRunResult:
     )
 
     # Enrich account results with retained counts after cleaning.
+    # no_posts_in_window / empty_window only when MCP returned posts (raw_count>0)
+    # and the collector already determined none fall in the rolling window.
+    # raw_count=0 is a fetch failure, never success/empty_window.
     for result in batch.account_results:
         retained = cleaning.retained_by_handle.get(result.handle.lower(), 0)
         result.retained_count = retained
-        result.empty_window = result.success and retained == 0
+        if result.success and result.raw_count == 0:
+            result.success = False
+            result.empty_window = False
+            result.fetch_returned_empty = True
+            result.page_complete = False
+            result.reason_code = result.reason_code or "mcp_empty_posts"
+            result.error = result.error or "raw_count=0 cannot be marked empty_window/success"
+            continue
+        if result.success and result.raw_count > 0 and (
+            result.empty_window or result.reason_code == "no_posts_in_window"
+        ):
+            result.empty_window = True
+            result.fetch_returned_empty = False
+            result.reason_code = "no_posts_in_window"
+        else:
+            if result.success:
+                result.empty_window = False
+                result.fetch_returned_empty = False
+        result.page_complete = result.success and not result.page_incomplete
     storage.save_account_results(batch.account_results)
 
     # Cursor updates only after successful fetch + persist + clean pipeline.

@@ -15,6 +15,9 @@ from app.x_watchlist.schemas import (
 
 CLEAN_POSTS_SCHEMA_VERSION = "x-clean-posts/v1"
 
+# Additive optional fields under v1 (media/context). Allowed only because consumers
+# must treat unknown fields as ignorable (see editorial loader). Removing or
+# renaming a previously required field would require x-clean-posts/v2.
 # Stable fields for M2 consumption; raw_payload stays in raw_posts.json only.
 CLEAN_POST_EXPORT_FIELDS = (
     "post_id",
@@ -31,6 +34,12 @@ CLEAN_POST_EXPORT_FIELDS = (
     "reply_to",
     "quoted_post",
     "external_links",
+    "social_context",
+    "watchlist_handle",
+    "has_media",
+    "media",
+    "link_card_title",
+    "likely_media_only",
     "engagement",
     "collected_at",
     "run_id",

@@ -32,7 +32,7 @@ class MCPRetryableError(MCPClientError):
 @dataclass
 class XNewsMCPSettings:
     node_command: str = "node"
-    server_script: str = r"C:\Users\90556\.codex\tools\x-news-mcp\dist\index.js"
+    server_script: str = ""
     profile_dir: str = r"C:\Users\90556\.codex-x-news-agent"
     chrome_path: str = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
     timeout_ms: str = "30000"
@@ -41,12 +41,17 @@ class XNewsMCPSettings:
 
     @classmethod
     def from_env(cls) -> XNewsMCPSettings:
+        repo_dist = Path(__file__).resolve().parents[2] / "dist" / "index.js"
+        codex_dist = Path(r"C:\Users\90556\.codex\tools\x-news-mcp\dist\index.js")
+        if repo_dist.exists():
+            default_script = str(repo_dist)
+        elif codex_dist.exists():
+            default_script = str(codex_dist)
+        else:
+            default_script = str(codex_dist)
         return cls(
             node_command=os.environ.get("X_MCP_NODE", "node"),
-            server_script=os.environ.get(
-                "X_MCP_SERVER_SCRIPT",
-                r"C:\Users\90556\.codex\tools\x-news-mcp\dist\index.js",
-            ),
+            server_script=os.environ.get("X_MCP_SERVER_SCRIPT", default_script),
             profile_dir=os.environ.get("X_AGENT_PROFILE_DIR", r"C:\Users\90556\.codex-x-news-agent"),
             chrome_path=os.environ.get(
                 "X_AGENT_CHROME_PATH",
@@ -71,6 +76,10 @@ class XNewsMCPClient:
                 "X_AGENT_PROFILE_DIR": self.settings.profile_dir,
                 "X_AGENT_CHROME_PATH": self.settings.chrome_path,
                 "X_AGENT_TIMEOUT_MS": self.settings.timeout_ms,
+                # Keep serial page ops by default; browser process is still reused.
+                "X_AGENT_MAX_CONCURRENT_PAGES": os.environ.get(
+                    "X_AGENT_MAX_CONCURRENT_PAGES", "1"
+                ),
             },
         )
         read, write = await self._stack.enter_async_context(stdio_client(params))

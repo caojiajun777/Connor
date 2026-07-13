@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from tests.x_watchlist.test_clean_posts_contract import load_clean_posts_v1
+from app.editorial.loader import load_clean_posts_v1
 
 
 def test_m1_golden_fixture_is_readable_v1() -> None:

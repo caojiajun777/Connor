@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 
 from app.x_watchlist.schemas import (
     Engagement,
+    MediaAsset,
     NormalizedPost,
     PostType,
     QuotedPostRef,
@@ -59,7 +60,7 @@ def infer_post_type(raw: dict[str, Any]) -> str:
         return PostType.REPOST.value
     if "replying to" in context:
         return PostType.REPLY.value
-    if "quote" in context:
+    if "quote" in context or raw.get("quoted_text") or raw.get("quoted_url"):
         return PostType.QUOTE.value
     if raw.get("text"):
         return PostType.ORIGINAL.value
@@ -87,6 +88,52 @@ def parse_published_at(value: str | None) -> str:
         return dt.astimezone().isoformat(timespec="seconds")
     except ValueError:
         return value
+
+
+def _parse_media(raw: dict[str, Any]) -> list[MediaAsset]:
+    media_raw = raw.get("media")
+    assets: list[MediaAsset] = []
+    if isinstance(media_raw, list):
+        for item in media_raw:
+            if not isinstance(item, dict):
+                continue
+            url = str(item.get("url") or "").strip()
+            if not url:
+                continue
+            assets.append(
+                MediaAsset(
+                    url=url,
+                    media_type=str(item.get("media_type") or "unknown"),
+                    alt_text=(str(item["alt_text"]).strip() if item.get("alt_text") else None),
+                )
+            )
+    return assets
+
+
+def _parse_quoted_post(raw: dict[str, Any], post_type: str) -> QuotedPostRef | None:
+    quoted_text = str(raw.get("quoted_text") or "").strip() or None
+    quoted_url = str(raw.get("quoted_url") or "").strip() or None
+    quoted_handle = normalize_handle(str(raw.get("quoted_handle") or "")) or None
+    quoted_post_id = None
+    if quoted_url:
+        try:
+            match = X_STATUS_PATH.match(urlparse(normalize_x_url(quoted_url)).path)
+            if match:
+                quoted_post_id = match.group(2)
+                quoted_handle = quoted_handle or match.group(1)
+        except ValueError:
+            pass
+
+    if quoted_text or quoted_url or quoted_handle or quoted_post_id:
+        return QuotedPostRef(
+            post_id=quoted_post_id,
+            handle=quoted_handle,
+            text=quoted_text,
+            url=quoted_url,
+        )
+    if post_type == PostType.QUOTE.value:
+        return QuotedPostRef()
+    return None
 
 
 def normalize_mcp_post(
@@ -119,15 +166,15 @@ def normalize_mcp_post(
         url = f"https://x.com/{author_handle}/status/{post_id}"
 
     published_at = parse_published_at(raw.get("created_at"))
-    context = raw.get("social_context") or ""
+    context = str(raw.get("social_context") or "").strip() or None
     post_type = infer_post_type(raw)
-
-    quoted_post = None
-    if post_type == PostType.QUOTE.value:
-        quoted_post = QuotedPostRef()
+    media = _parse_media(raw)
+    has_media = bool(raw.get("has_media")) or bool(media)
+    link_card_title = str(raw.get("link_card_title") or "").strip() or None
+    likely_media_only = (not text) and (has_media or bool(url))
 
     reply_to = None
-    if post_type == PostType.REPLY.value:
+    if post_type == PostType.REPLY.value and context:
         reply_match = re.search(r"replying to @?([A-Za-z0-9_]+)", context, re.I)
         if reply_match:
             reply_to = reply_match.group(1)
@@ -150,10 +197,16 @@ def normalize_mcp_post(
         text=text,
         url=url,
         post_type=post_type,
-        is_pinned="pinned" in context.lower(),
+        is_pinned=bool(context and "pinned" in context.lower()),
         reply_to=reply_to,
-        quoted_post=quoted_post,
+        quoted_post=_parse_quoted_post(raw, post_type),
         external_links=extract_external_links(text),
+        social_context=context,
+        watchlist_handle=account.handle,
+        has_media=has_media,
+        media=media,
+        link_card_title=link_card_title,
+        likely_media_only=likely_media_only,
         engagement=engagement,
         collected_at=collected_at or utc_now_iso(),
         run_id=run_id,

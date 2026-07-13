@@ -40,6 +40,12 @@ class QuotedPostRef(BaseModel):
     url: str | None = None
 
 
+class MediaAsset(BaseModel):
+    url: str
+    media_type: str = "unknown"  # image | video | gif | unknown
+    alt_text: str | None = None
+
+
 class XSourceAccount(BaseModel):
     handle: str
     display_name: str
@@ -52,7 +58,8 @@ class XSourceAccount(BaseModel):
     include_replies: bool = True
     include_reposts: bool = True
 
-    max_posts_per_run: int = 10
+    # 0 = keep all in-window posts after tech dedupe (M2 decides ranking).
+    max_posts_per_run: int = 0
     enabled: bool = True
     notes: str | None = None
 
@@ -81,6 +88,14 @@ class NormalizedPost(BaseModel):
     quoted_post: QuotedPostRef | None = None
     external_links: list[str] = Field(default_factory=list)
 
+    # Context for M2 (additive fields under x-clean-posts/v1).
+    social_context: str | None = None
+    watchlist_handle: str = ""
+    has_media: bool = False
+    media: list[MediaAsset] = Field(default_factory=list)
+    link_card_title: str | None = None
+    likely_media_only: bool = False
+
     engagement: Engagement = Field(default_factory=Engagement)
 
     collected_at: str
@@ -101,8 +116,11 @@ class AccountCollectionResult(BaseModel):
     success: bool
     raw_count: int = 0
     retained_count: int = 0
+    in_window_count: int = 0
     empty_window: bool = False
+    fetch_returned_empty: bool = False
     page_incomplete: bool = False
+    page_complete: bool = True
     error: str | None = None
     reason_code: str | None = None
 
@@ -123,6 +141,7 @@ class CoverageReport(BaseModel):
     accounts_succeeded: int = 0
     accounts_failed: int = 0
     accounts_empty_window: int = 0
+    accounts_fetch_returned_empty: int = 0
     accounts_page_incomplete: int = 0
 
     raw_posts_collected: int = 0
@@ -140,6 +159,8 @@ class CoverageReport(BaseModel):
     by_source_type: dict[str, int] = Field(default_factory=dict)
     retained_by_handle: dict[str, int] = Field(default_factory=dict)
     empty_window_handles: list[str] = Field(default_factory=list)
+    fetch_returned_empty_handles: list[str] = Field(default_factory=list)
+    page_incomplete_handles: list[str] = Field(default_factory=list)
 
     account_errors: list[AccountError] = Field(default_factory=list)
     started_at: str
@@ -182,6 +203,8 @@ RETRYABLE_REASON_CODES = frozenset(
         "browser_timeout",
         "browser_profile_locked",
         "network_error",
+        # Profile fetch returned zero posts without an MCP error flag.
+        "mcp_empty_posts",
     }
 )
 

@@ -9,10 +9,12 @@ X 信息源采集项目：本地 MCP 服务（TypeScript）+ Watchlist 增量编
 ```text
 src/                 # X News MCP server（Playwright + 持久 Chrome profile）
 app/x_watchlist/     # Python 采集编排：MCP client / cleaner / cursors / runner
+app/editorial/       # M2 编辑排序（文件产物路径）
+app/daily/           # M3+ Daily Agent：LangGraph / PG / Redis
 config/              # x_watchlist.yaml 账号清单
-docs/                # 采集层设计说明
+docs/                # 采集层 + Daily Agent 规格
 fixtures/            # 轻量黄金运行样本（M2 输入）
-tests/x_watchlist/   # Python 单元测试
+tests/               # Python 单元测试
 .codex/config.toml   # Codex MCP 注册
 ```
 
@@ -66,7 +68,11 @@ Agent 可调用：
 
 ## X Watchlist 增量采集（Milestone 1）
 
-Python 编排层通过 MCP 串行调用现有 X 工具，按固定信源采集最近 **72 小时**内内容，技术去重后按发布时间倒序，**每账号最多保留 10 条**。设计说明见 `docs/x-source-collection-design.md`。
+Python 编排层通过 MCP 串行调用现有 X 工具，**分页抓取直到越过 72 小时窗口**（或达到安全页数上限），技术去重后按发布时间倒序保留窗口内帖子。默认**不按账号硬截断 10 条**（Top 20 由 M2 排序决定）。Coverage 区分 `fetch_returned_empty` 与 `empty_window`。设计说明见 `docs/x-source-collection-design.md`。
+
+MCP 在单次采集进程内**复用同一个 Chrome 会话**（仍串行翻账号，避免多开 profile / 提高封号风险）；预计可减少每次工具调用的冷启动开销。
+
+`x-clean-posts/v1` 在保持原有必填字段的同时，增加可选上下文字段：`social_context`、`watchlist_handle`、`has_media`、`media`、`link_card_title`、`likely_media_only`、完善的 `quoted_post`。
 
 ### 安装
 
@@ -94,6 +100,68 @@ python -m app.cli x-watchlist collect --handles OpenAI,thsottiaux,LuminaXspace
 ```powershell
 python -m pytest
 ```
+
+## Editorial 编辑层（Milestone 2）
+
+读取 `x-clean-posts/v1`，通过**一次** LLM 调用做逐条解析 + 全局精选排序，输出 `editorial-picks/v2`（完整排名 + Top 20）。
+
+M2 是 **AI 前沿精选排序器**，不是事件聚合器：每条输入帖子都参与解析与排名；不使用 `keep/discard/merge`；不做通用语义去重（仅允许同 Thread / 完全重复转发 / 机械拆帖的轻量整理）。
+
+```powershell
+# 离线 dry-run（确定性 mock，不调 API）
+python -m app.cli editorial run --dry-run
+
+# 真实 LLM（需要 CONNOR_LLM_API_KEY / DEEPSEEK_API_KEY）
+python -m app.cli editorial run --input fixtures/m1_golden_run/clean_posts.json
+```
+
+产物：`data/editorial_runs/<run_id>/picks.json` + `editorial_trace.json`（+ 可选 `reasoning.txt`）。
+
+- 默认 Prompt：`app/editorial/prompts/v2_editorial_system.md`
+- 历史 Prompt（事件聚合，仅用于解释旧 Run）：`v1_editorial_system.md` / schema `editorial-events/v1`
+
+## Daily Agent（Milestone 3a+）
+
+冻结规格见 [`docs/agent-design.md`](docs/agent-design.md)（Connor Daily Agent Specification v1）。
+
+M3a 已落地：PostgreSQL schema、Redis 工作游标（无 TTL）、PG advisory run lock、文件游标导入、薄 LangGraph 主图。
+
+M3b 已落地：`cursor_eligible`（裸 Repost/置顶不可作锚点）、精确命中旧游标停止、72h/`known_data_gap`、账号级 persist + cursor outbox → Redis、collection/cursor_sync gate。
+
+M3c 已落地：`run_posts` 候选冻结 / `requeue_candidates`、版本化 `post_summaries`（≤100 字中文摘要 Prompt v1）、mock/真实 LLM 摘要、`summary_gate`（终态或显式 `accept_partial`）。
+
+M3d 已落地：全量 `post_evaluations`（绑定 `summary_id`）、`evaluation_gate`、确定 Top K、Editorial Top≤20 → `selection_items`（`publication_status=unpublished`，入选≠发布）。
+
+M3e 已落地：Memory/Postgres Checkpointer、生产 `start`/`resume`（advisory lock + run 状态机）、cron `tick` 调度窗口、metrics/告警 webhook、只读 FastAPI（`/runs` `/selection` `/evaluations`）。
+
+```powershell
+# 生产 dry 启动（写 PG run 行 + checkpoint；不跑 live LLM）
+python -m app.cli daily run --no-lock
+
+# 到点窗口内触发（默认 08:00 Asia/Shanghai，可用环境变量改）
+python -m app.cli daily tick --force
+
+# 恢复暂停 run
+python -m app.cli daily resume --run-id <uuid> --accept-partial
+
+# 只读 API
+python -m app.cli daily serve-api --port 8080
+```
+
+```powershell
+pip install -e ".[dev]"
+
+# 薄主图 dry-run（不访问 X / 不强制 DB）
+python -m app.cli daily dry-run
+
+# 创建 PG 表（需要 CONNOR_DATABASE_URL）
+python -m app.cli daily init-db
+
+# 导入 data/x_watchlist_cursors.json → Redis（需要 CONNOR_REDIS_URL）
+python -m app.cli daily import-cursors
+```
+
+环境变量：`CONNOR_DATABASE_URL`、`CONNOR_REDIS_URL`（可选覆盖 watchlist / cursor 路径）。
 
 ## 安全与限制
 

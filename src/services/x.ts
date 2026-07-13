@@ -283,11 +283,84 @@ export async function extractPosts(page: Page): Promise<XPost[]> {
         return element?.getAttribute("aria-label") ?? element?.textContent?.trim() ?? null;
       };
       const viewLink = article.querySelector<HTMLElement>('a[href$="/analytics"]');
-      const text =
-        article.querySelector<HTMLElement>('[data-testid="tweetText"]')?.innerText.trim() ?? "";
+      const primaryTextNode = article.querySelector<HTMLElement>('[data-testid="tweetText"]');
+      const text = primaryTextNode?.innerText.trim() ?? "";
       const context = article
         .querySelector<HTMLElement>('[data-testid="socialContext"]')
         ?.innerText.trim();
+
+      // Media: photos, gifs, videos attached to this card (best-effort DOM scrape).
+      const media: Array<{ url: string; media_type: "image" | "video" | "gif" | "unknown"; alt_text: string | null }> =
+        [];
+      const seenMedia = new Set<string>();
+      const pushMedia = (url: string, mediaType: "image" | "video" | "gif" | "unknown", alt: string | null) => {
+        if (!url || seenMedia.has(url)) return;
+        seenMedia.add(url);
+        media.push({ url, media_type: mediaType, alt_text: alt });
+      };
+      for (const img of Array.from(article.querySelectorAll<HTMLImageElement>("img"))) {
+        const src = img.currentSrc || img.src || "";
+        if (!/pbs\.twimg\.com|ton\.twitter\.com|video\.twimg\.com/.test(src)) continue;
+        if (/profile_images|emoji|hashflag/.test(src)) continue;
+        const alt = (img.getAttribute("alt") || "").trim();
+        const mediaType = /tweet_video_thumb|\.gif/i.test(src) ? "gif" : "image";
+        pushMedia(src, mediaType, alt || null);
+      }
+      for (const video of Array.from(article.querySelectorAll<HTMLVideoElement>("video"))) {
+        const src = video.currentSrc || video.src || video.querySelector("source")?.src || "";
+        if (src) pushMedia(src, "video", video.getAttribute("aria-label"));
+        else if (video.poster) pushMedia(video.poster, "video", video.getAttribute("aria-label"));
+      }
+      if (article.querySelector('[data-testid="videoPlayer"], [data-testid="videoComponent"]')) {
+        // Ensure has_media even when src is blob:/lazy.
+        if (media.length === 0) pushMedia(`video://${matchedPostId}`, "video", null);
+      }
+
+      // Quoted post: nested status link + secondary tweetText not equal to primary text.
+      let quoted_text: string | null = null;
+      let quoted_url: string | null = null;
+      let quoted_handle: string | null = null;
+      const statusLinks = Array.from(article.querySelectorAll<HTMLAnchorElement>('a[href*="/status/"]'));
+      for (const link of statusLinks) {
+        const qHref = link.getAttribute("href") ?? "";
+        const qMatch = qHref.match(/^\/([A-Za-z0-9_]+)\/status\/(\d+)/);
+        if (!qMatch) continue;
+        if (qMatch[2] === matchedPostId) continue;
+        quoted_url = absolute(qHref.split("?")[0] ?? qHref);
+        quoted_handle = qMatch[1] ?? null;
+        break;
+      }
+      const textNodes = Array.from(article.querySelectorAll<HTMLElement>('[data-testid="tweetText"]'));
+      if (textNodes.length > 1) {
+        const nested = textNodes
+          .slice(1)
+          .map((node) => node.innerText.trim())
+          .find((value) => value && value !== text);
+        if (nested) quoted_text = nested;
+      }
+
+      // Link card / preview title.
+      let link_card_title: string | null = null;
+      const card =
+        article.querySelector<HTMLElement>('[data-testid="card.wrapper"]') ??
+        article.querySelector<HTMLElement>('[data-testid="card.layoutLarge.media"]') ??
+        article.querySelector<HTMLElement>('[data-testid="card.layoutSmall.media"]');
+      if (card) {
+        const leafTexts = Array.from(card.querySelectorAll("span, div, a"))
+          .filter((el) => el.children.length === 0)
+          .map((el) => (el.textContent ?? "").trim())
+          .filter((text) => text.length > 0 && text.length < 240);
+        if (leafTexts.length > 0) {
+          link_card_title = leafTexts[0] ?? null;
+        } else {
+          const fallback = card.innerText
+            .trim()
+            .split(/\n+/)
+            .map((line) => line.trim())
+            .find(Boolean);
+          link_card_title = fallback || null;
+        }
+      }
 
       return [
         {
@@ -301,7 +374,13 @@ export async function extractPosts(page: Page): Promise<XPost[]> {
           reply_label: metric("reply"),
           repost_label: metric("retweet"),
           like_label: metric("like") ?? metric("unlike"),
-          view_label: viewLink?.getAttribute("aria-label") ?? viewLink?.innerText.trim() ?? null
+          view_label: viewLink?.getAttribute("aria-label") ?? viewLink?.innerText.trim() ?? null,
+          has_media: media.length > 0,
+          media,
+          quoted_text,
+          quoted_url,
+          quoted_handle,
+          link_card_title
         }
       ];
     });

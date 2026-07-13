@@ -5,42 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from app.editorial.loader import load_clean_posts_v1
 from app.x_watchlist.storage import CLEAN_POSTS_SCHEMA_VERSION
-
-
-REQUIRED_CLEAN_POST_FIELDS = {
-    "post_id",
-    "handle",
-    "published_at",
-    "text",
-    "url",
-    "post_type",
-    "source_type",
-    "run_id",
-}
-
-
-def load_clean_posts_v1(path: Path) -> dict:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError("clean_posts root must be an object")
-    if payload.get("schema_version") != CLEAN_POSTS_SCHEMA_VERSION:
-        raise ValueError(
-            f"Unsupported schema_version: {payload.get('schema_version')!r}; "
-            f"expected {CLEAN_POSTS_SCHEMA_VERSION!r}"
-        )
-    for key in ("run_id", "window_start", "window_end", "posts"):
-        if key not in payload:
-            raise ValueError(f"Missing required envelope field: {key}")
-    if not isinstance(payload["posts"], list):
-        raise ValueError("'posts' must be a list")
-    for index, post in enumerate(payload["posts"]):
-        if not isinstance(post, dict):
-            raise ValueError(f"posts[{index}] must be an object")
-        missing = REQUIRED_CLEAN_POST_FIELDS - set(post)
-        if missing:
-            raise ValueError(f"posts[{index}] missing fields: {sorted(missing)}")
-    return payload
 
 
 def test_clean_posts_contract_accepts_unknown_extra_fields(tmp_path: Path) -> None:

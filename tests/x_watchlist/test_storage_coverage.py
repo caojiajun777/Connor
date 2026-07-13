@@ -26,6 +26,20 @@ def test_build_coverage_report_partial_status() -> None:
                 error="timeout",
                 reason_code="browser_timeout",
             ),
+            AccountCollectionResult(
+                handle="LuminaXspace",
+                success=False,
+                raw_count=0,
+                fetch_returned_empty=True,
+                reason_code="mcp_empty_posts",
+            ),
+            AccountCollectionResult(
+                handle="deepseek_ai",
+                success=True,
+                raw_count=20,
+                empty_window=True,
+                reason_code="no_posts_in_window",
+            ),
         ],
         account_errors=[AccountError(handle="xai", error="timeout", reason_code="browser_timeout")],
         raw_posts_collected=2,
@@ -38,8 +52,12 @@ def test_build_coverage_report_partial_status() -> None:
         finished_at="2026-07-12T01:00:05+00:00",
     )
     assert coverage.status == "partial"
-    assert coverage.accounts_succeeded == 1
-    assert coverage.accounts_failed == 1
+    assert coverage.accounts_succeeded == 2
+    assert coverage.accounts_failed == 2
+    assert coverage.accounts_fetch_returned_empty == 1
+    assert coverage.fetch_returned_empty_handles == ["LuminaXspace"]
+    assert coverage.accounts_empty_window == 1
+    assert coverage.empty_window_handles == ["deepseek_ai"]
     assert coverage.clean_posts_retained == 2
     assert coverage.by_source_type == {"official": 1, "employee": 1}
     assert coverage.duration_seconds == 5.0

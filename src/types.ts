@@ -1,5 +1,11 @@
 export type ResponseFormat = "markdown" | "json";
 
+export interface XMediaItem {
+  url: string;
+  media_type: "image" | "video" | "gif" | "unknown";
+  alt_text: string | null;
+}
+
 export interface XPost {
   post_id: string;
   url: string;
@@ -12,6 +18,15 @@ export interface XPost {
   repost_label: string | null;
   like_label: string | null;
   view_label: string | null;
+  /** Best-effort media extracted from the timeline card. */
+  has_media: boolean;
+  media: XMediaItem[];
+  /** Quoted / nested post text when visible on the card. */
+  quoted_text: string | null;
+  quoted_url: string | null;
+  quoted_handle: string | null;
+  /** Link-card / preview title when present. */
+  link_card_title: string | null;
 }
 
 export interface SearchResult {

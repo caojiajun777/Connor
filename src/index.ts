@@ -231,10 +231,19 @@ server.registerTool(
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("x-news-mcp-server running via stdio");
+  const pages = process.env.X_AGENT_MAX_CONCURRENT_PAGES ?? "1";
+  console.error(
+    `x-news-mcp-server running via stdio (shared browser session, max concurrent pages=${pages})`
+  );
 }
 
-main().catch((error: unknown) => {
+main().catch(async (error: unknown) => {
   console.error("Fatal MCP server error:", error);
+  try {
+    const { closeSharedBrowser } = await import("./services/browser.js");
+    await closeSharedBrowser();
+  } catch {
+    // ignore cleanup errors on fatal path
+  }
   process.exit(1);
 });
