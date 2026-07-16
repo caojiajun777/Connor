@@ -51,4 +51,88 @@ class PublicationStatus(str, Enum):
     WITHDRAWN = "withdrawn"
 
 
+class AnnotationRunStatus(str, Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+
+
+class HumanLabel(str, Enum):
+    INCLUDE = "include"
+    EXCLUDE = "exclude"
+    UNCERTAIN = "uncertain"
+    DUPLICATE = "duplicate"
+
+
+DEFAULT_ANNOTATION_POLICY_VERSION = "annotation-policy/v1"
+
+# Full allow-lists (including legacy codes retained for historical rows).
+EXCLUDE_REASON_CODES = frozenset(
+    {
+        "low_information",
+        "duplicate_event",  # legacy; use human_label=duplicate for new labels
+        "old_information",
+        "weak_source",
+        "pure_promotion",
+        "insufficient_evidence",
+        "not_frontier",
+        "too_niche",
+        "already_covered",
+        "low_daily_relevance",
+        "bare_repost",
+        "other",
+    }
+)
+
+INCLUDE_REASON_CODES = frozenset(
+    {
+        "major_release",
+        "official_confirmation",
+        "high_information_gain",
+        "frontier_signal",
+        "important_product_update",
+        "market_impact",
+        "china_ai_significance",
+        "underestimated_by_model",
+        "other",
+    }
+)
+
+# Ordered UI vocabularies (annotator judgement flow). Do not alphabetize.
+UI_INCLUDE_REASON_ORDER: tuple[str, ...] = (
+    "major_release",
+    "important_product_update",
+    "official_confirmation",
+    "high_information_gain",
+    "frontier_signal",
+    "market_impact",
+    "china_ai_significance",
+    "underestimated_by_model",
+    "other",
+)
+
+UI_EXCLUDE_REASON_ORDER: tuple[str, ...] = (
+    "low_information",
+    "old_information",
+    "bare_repost",
+    "pure_promotion",
+    "weak_source",
+    "insufficient_evidence",
+    "not_frontier",
+    "low_daily_relevance",
+    "too_niche",
+    "already_covered",
+    "other",
+)
+
+UI_INCLUDE_REASON_CODES = frozenset(UI_INCLUDE_REASON_ORDER)
+UI_EXCLUDE_REASON_CODES = frozenset(UI_EXCLUDE_REASON_ORDER)
+
+DEPRECATED_REASON_CODES = frozenset({"duplicate_event"})
+# Alias used by older console helpers / tests
+HIDDEN_REASON_CODES = DEPRECATED_REASON_CODES
+
+ALL_REASON_CODES = EXCLUDE_REASON_CODES | INCLUDE_REASON_CODES
+
+
 PIPELINE_LOCK_NAME = "connor_daily_pipeline"

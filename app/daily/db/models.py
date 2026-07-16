@@ -232,3 +232,77 @@ class SelectionItem(Base):
         String(32), nullable=False, default="unpublished"
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AnnotationRun(Base):
+    """Human labeling task bound to one production daily run (immutable source)."""
+
+    __tablename__ = "annotation_runs"
+    __table_args__ = (
+        UniqueConstraint(
+            "source_run_id",
+            "annotation_policy_version",
+            name="uq_annotation_runs_source_policy",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=_uuid)
+    source_run_id: Mapped[str] = mapped_column(
+        ForeignKey("runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    annotation_policy_version: Mapped[str] = mapped_column(String(64), nullable=False, default="v1")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
+    annotator: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    total_items: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    reviewed_items: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    items: Mapped[list["AnnotationItem"]] = relationship(back_populates="annotation_run")
+
+
+class AnnotationItem(Base):
+    """Per-candidate human label; never mutates production evaluation/selection rows."""
+
+    __tablename__ = "annotation_items"
+    __table_args__ = (
+        UniqueConstraint(
+            "annotation_run_id",
+            "post_id",
+            name="uq_annotation_items_run_post",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=_uuid)
+    annotation_run_id: Mapped[str] = mapped_column(
+        ForeignKey("annotation_runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    post_id: Mapped[str] = mapped_column(ForeignKey("posts.post_id", ondelete="CASCADE"), nullable=False)
+    summary_id: Mapped[str] = mapped_column(
+        ForeignKey("post_summaries.id", ondelete="RESTRICT"), nullable=False
+    )
+    evaluation_id: Mapped[str] = mapped_column(
+        ForeignKey("post_evaluations.id", ondelete="RESTRICT"), nullable=False
+    )
+
+    machine_selected: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    machine_rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    machine_top_k_rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    human_label: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    human_rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reason_codes: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    annotation_run: Mapped[AnnotationRun] = relationship(back_populates="items")

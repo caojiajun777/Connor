@@ -106,6 +106,8 @@ def _card_for_editorial(
         "source_role": post.source_type if post else None,
         "organization": post.organization if post else None,
         "published_at": post.published_at.isoformat() if post and post.published_at else None,
+        "post_type": post.post_type if post else None,
+        "text": post.text if post else None,
         "summary": summary.summary if summary else None,
         "content_type": summary.content_type if summary else None,
         "uncertainty": summary.uncertainty if summary else None,

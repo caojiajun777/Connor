@@ -57,6 +57,10 @@ accounts:
     display_name: xAI
     organization: xAI
     source_type: official
+  - handle: SpaceXAI
+    display_name: SpaceXAI
+    organization: SpaceXAI
+    source_type: official
   - handle: AIatMeta
     display_name: AI at Meta
     organization: Meta

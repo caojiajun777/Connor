@@ -18,9 +18,9 @@ class DailySettings:
     summary_model: str = "deepseek-chat"
     evaluation_model: str = "deepseek-chat"
     editorial_model: str = "deepseek-chat"
-    summary_prompt_version: str = "v1"
-    evaluation_prompt_version: str = "v1"
-    editorial_prompt_version: str = "v1"
+    summary_prompt_version: str = "v2"
+    evaluation_prompt_version: str = "v2"
+    editorial_prompt_version: str = "v2"
     lock_key: str = "connor_daily_pipeline"
     cursor_key_prefix: str = "connor:x:cursor:"
 
@@ -48,7 +48,7 @@ class DailySettings:
             summary_model=os.environ.get("CONNOR_SUMMARY_MODEL", "deepseek-chat"),
             evaluation_model=os.environ.get("CONNOR_EVALUATION_MODEL", "deepseek-chat"),
             editorial_model=os.environ.get("CONNOR_EDITORIAL_MODEL", "deepseek-chat"),
-            summary_prompt_version=os.environ.get("CONNOR_SUMMARY_PROMPT_VERSION", "v1"),
-            evaluation_prompt_version=os.environ.get("CONNOR_EVALUATION_PROMPT_VERSION", "v1"),
-            editorial_prompt_version=os.environ.get("CONNOR_EDITORIAL_PROMPT_VERSION", "v1"),
+            summary_prompt_version=os.environ.get("CONNOR_SUMMARY_PROMPT_VERSION", "v2"),
+            evaluation_prompt_version=os.environ.get("CONNOR_EVALUATION_PROMPT_VERSION", "v2"),
+            editorial_prompt_version=os.environ.get("CONNOR_EDITORIAL_PROMPT_VERSION", "v2"),
         )

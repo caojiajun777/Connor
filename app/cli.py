@@ -238,7 +238,7 @@ def _build_daily_parser(subparsers: argparse._SubParsersAction[argparse.Argument
     tick.add_argument("--force", action="store_true", help="Ignore schedule window")
     tick.set_defaults(daily_command="tick")
 
-    api = subparsers.add_parser("serve-api", help="Serve readonly FastAPI for runs/selection")
+    api = subparsers.add_parser("serve-api", help="Serve Daily + Console FastAPI (runs/annotations)")
     api.add_argument("--host", default="127.0.0.1")
     api.add_argument("--port", type=int, default=8080)
     api.set_defaults(daily_command="serve-api")

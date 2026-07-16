@@ -175,7 +175,7 @@ class DailyProductionRuntime:
 
                 if not skip_llm_phases:
                     summary_llm = _live_llm_client(
-                        model=self.settings.summary_model, max_tokens=2048
+                        model=self.settings.summary_model, max_tokens=4096
                     )
                     eval_llm = _live_llm_client(
                         model=self.settings.evaluation_model, max_tokens=2048
@@ -353,7 +353,7 @@ class DailyProductionRuntime:
 
             with self.session_factory() as session:
                 summary_llm = None if dry_run else _live_llm_client(
-                    model=self.settings.summary_model, max_tokens=2048
+                    model=self.settings.summary_model, max_tokens=4096
                 )
                 summary_phase = run_m3c_summary_phase(
                     session,

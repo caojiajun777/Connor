@@ -3,9 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import desc, select
 
 from app.daily.config import DailySettings
+from app.daily.console import create_console_router
 from app.daily.db import create_db_engine, create_session_factory, init_schema
 from app.daily.db.models import AccountRun, PostEvaluation, Run, SelectionItem, SelectionRun
 
@@ -15,7 +17,7 @@ def create_app(
     *,
     skip_schema_init: bool = False,
 ) -> FastAPI:
-    """Readonly HTTP API for web/backends (M3e)."""
+    """HTTP API: legacy readonly routes + Connor Console `/api/console/*`."""
     settings = settings or DailySettings.from_env()
     engine = create_db_engine(settings.database_url)
     if not skip_schema_init:
@@ -27,6 +29,19 @@ def create_app(
     factory = create_session_factory(engine)
 
     app = FastAPI(title="Connor Daily API", version="1.0.0")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://127.0.0.1:5173",
+            "http://localhost:5173",
+            "http://127.0.0.1:4173",
+            "http://localhost:4173",
+        ],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    app.include_router(create_console_router(factory))
 
     @app.get("/health")
     def health() -> dict[str, str]:

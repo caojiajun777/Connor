@@ -13,26 +13,54 @@ from app.daily.versions import prompt_path, resolve_prompt_hash, sha256_file
 
 
 def test_evaluation_and_editorial_prompts_exist() -> None:
-    for kind in ("evaluation", "editorial"):
-        path = prompt_path("v1", kind)
-        assert path.exists(), kind
-        version, digest = resolve_prompt_hash("v1", kind)
-        assert version == "v1"
-        assert digest == sha256_file(path)
+    for version in ("v1", "v2"):
+        for kind in ("evaluation", "editorial"):
+            path = prompt_path(version, kind)
+            assert path.exists(), f"{version}_{kind}"
+            resolved, digest = resolve_prompt_hash(version, kind)
+            assert resolved == version
+            assert digest == sha256_file(path)
 
 
 def test_mock_evaluation_payload_scores_leak_higher() -> None:
     summary = SimpleNamespace(
-        summary="GPT-5 rumor from employee",
+        summary="员工称可能发布 GPT-5",
         content_type="frontier_leak",
         uncertainty="unconfirmed",
     )
-    post = SimpleNamespace(post_id="100", handle="leak", text="GPT-5", source_type="leak")
+    post = SimpleNamespace(post_id="100", handle="leak", text="GPT-5 rumor from employee", source_type="leak")
     leak = mock_evaluation_payload(summary, post)  # type: ignore[arg-type]
-    noise_summary = SimpleNamespace(summary="gm", content_type="noise", uncertainty=None)
+    noise_summary = SimpleNamespace(summary="早上好", content_type="noise", uncertainty=None)
     noise_post = SimpleNamespace(post_id="1", handle="x", text="gm", source_type="analyst")
     noise = mock_evaluation_payload(noise_summary, noise_post)  # type: ignore[arg-type]
     assert leak["importance_score"] > noise["importance_score"]
+
+
+def test_build_evaluation_user_prompt_uses_post_text() -> None:
+    from app.daily.evaluate import build_evaluation_user_prompt
+
+    summary = SimpleNamespace(
+        id="s1",
+        summary="中文译文占位",
+        content_type="official_announce",
+        uncertainty=None,
+    )
+    post = SimpleNamespace(
+        post_id="p1",
+        handle="OpenAI",
+        watchlist_handle="OpenAI",
+        source_type="official",
+        organization="OpenAI",
+        published_at=None,
+        post_type="original",
+        text="GPT-5.6 is now available",
+        url="https://x.com/OpenAI/status/1",
+    )
+    prompt = build_evaluation_user_prompt(summary, post)  # type: ignore[arg-type]
+    assert "帖子原文" in prompt
+    assert "GPT-5.6 is now available" in prompt
+    assert "摘要卡片" not in prompt
+    assert '"text"' in prompt
 
 
 def test_evaluation_gate_symmetric_to_summary() -> None:

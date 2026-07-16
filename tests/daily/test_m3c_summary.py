@@ -14,12 +14,13 @@ from app.daily.versions import resolve_prompt_hash, sha256_file, prompt_path
 
 
 def test_summary_prompt_file_exists_and_hashes() -> None:
-    path = prompt_path("v1", "summary")
-    assert path.exists()
-    version, digest = resolve_prompt_hash("v1", "summary")
-    assert version == "v1"
-    assert digest == sha256_file(path)
-    assert len(digest) == 64
+    for version in ("v1", "v2"):
+        path = prompt_path(version, "summary")
+        assert path.exists(), version
+        resolved, digest = resolve_prompt_hash(version, "summary")
+        assert resolved == version
+        assert digest == sha256_file(path)
+        assert len(digest) == 64
 
 
 def test_truncate_summary() -> None:
@@ -40,7 +41,23 @@ def test_mock_summary_payload_detects_frontier() -> None:
     )
     payload = mock_summary_payload(post)  # type: ignore[arg-type]
     assert payload["content_type"] == "frontier_leak"
-    assert len(payload["summary"]) <= 100
+    assert payload["summary"] == post.text
+    assert "GPT-5" in payload["summary"]
+
+
+def test_mock_summary_payload_keeps_full_text() -> None:
+    long = "A" * 250
+    post = SimpleNamespace(
+        text=long,
+        url="https://x.com/x/status/2",
+        post_id="2",
+        handle="x",
+        organization=None,
+        source_type="analyst",
+    )
+    payload = mock_summary_payload(post)  # type: ignore[arg-type]
+    assert payload["summary"] == long
+    assert len(payload["summary"]) == 250
 
 
 def test_summary_gate_all_success() -> None:

@@ -128,9 +128,9 @@ M3a 已落地：PostgreSQL schema、Redis 工作游标（无 TTL）、PG advisor
 
 M3b 已落地：`cursor_eligible`（裸 Repost/置顶不可作锚点）、精确命中旧游标停止、72h/`known_data_gap`、账号级 persist + cursor outbox → Redis、collection/cursor_sync gate。
 
-M3c 已落地：`run_posts` 候选冻结 / `requeue_candidates`、版本化 `post_summaries`（≤100 字中文摘要 Prompt v1）、mock/真实 LLM 摘要、`summary_gate`（终态或显式 `accept_partial`）。
+M3c 已落地：`run_posts` 候选冻结 / `requeue_candidates`、版本化 `post_summaries`（v2 = 忠实中文翻译，无字数上限；旧 run 仍可能为 v1 ≤100 字压缩摘要）、mock/真实 LLM、`summary_gate`（终态或显式 `accept_partial`）。
 
-M3d 已落地：全量 `post_evaluations`（绑定 `summary_id`）、`evaluation_gate`、确定 Top K、Editorial Top≤20 → `selection_items`（`publication_status=unpublished`，入选≠发布）。
+M3d 已落地：全量 `post_evaluations`（绑定 `summary_id`；**打分读帖子原文 `post.text`**，Prompt v2）、`evaluation_gate`、确定 Top K、Editorial Top≤20（候选卡含原文+中译）→ `selection_items`（`publication_status=unpublished`，入选≠发布）。
 
 M3e 已落地：Memory/Postgres Checkpointer、生产 `start`/`resume`（advisory lock + run 状态机）、cron `tick` 调度窗口、metrics/告警 webhook、只读 FastAPI（`/runs` `/selection` `/evaluations`）。
 
@@ -167,7 +167,23 @@ python scripts/debug_daily_e2e.py
 
 环境变量：`CONNOR_DATABASE_URL`（默认 `.../connor_daily`）、`CONNOR_REDIS_URL`（可选覆盖 watchlist / cursor 路径）。Redis 未启动时 cursor sync 可跳过，dry e2e 仍可跑通。
 
-## 安全与限制
+## Connor Console（内部后台）
+
+计划：[`docs/console-development-plan.md`](docs/console-development-plan.md)
+
+```powershell
+# API（含 /api/console/*）
+python -m app.cli daily init-db
+python -m app.cli daily serve-api --port 8080
+
+# 前端
+cd frontend
+npm install
+npm run dev
+```
+
+浏览器打开 `http://127.0.0.1:5173/console`。人工标注写入独立 `annotation_*` 表，不修改生产 selection / evaluation。
+
 
 - 本工具只读，不点赞、不关注、不转发、不发帖。
 - 不要同时打开两份专用 profile；Chrome 会锁定 profile 目录。

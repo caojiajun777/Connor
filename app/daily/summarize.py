@@ -13,6 +13,7 @@ from app.daily.enums import TaskStatus
 from app.daily.versions import prompt_path
 
 
+# Legacy v1 compressed-summary path only. v2 stores full faithful translations.
 MAX_SUMMARY_CHARS = 100
 
 
@@ -34,17 +35,19 @@ class SummarizeBatchResult:
             self.summary_ids = []
 
 
-def load_summary_system_prompt(version: str = "v1") -> str:
+def load_summary_system_prompt(version: str = "v2") -> str:
     path = prompt_path(version, "summary")
     if path.exists():
         return path.read_text(encoding="utf-8")
     return (
-        "Summarize the X post in Chinese JSON with keys "
-        "summary, content_type, entities, uncertainty. summary <= 100 chars."
+        "Translate the X post into faithful Chinese JSON with keys "
+        "summary, content_type, entities, uncertainty. "
+        "summary must preserve meaning without compression."
     )
 
 
 def truncate_summary(text: str, *, limit: int = MAX_SUMMARY_CHARS) -> str:
+    """Legacy helper for v1-style compressed summaries / tests."""
     cleaned = (text or "").strip()
     if len(cleaned) <= limit:
         return cleaned
@@ -52,16 +55,17 @@ def truncate_summary(text: str, *, limit: int = MAX_SUMMARY_CHARS) -> str:
 
 
 def mock_summary_payload(post: Post) -> dict[str, Any]:
-    """Deterministic offline summary for dry-run / tests."""
-    snippet = truncate_summary(post.text or post.url or post.post_id)
+    """Deterministic offline translation row for dry-run / tests (no LLM)."""
+    text = (post.text or post.url or post.post_id or "").strip()
     content_type = "noise"
-    lower = (post.text or "").lower()
+    lower = text.lower()
     if any(k in lower for k in ("gpt", "claude", "gemini", "llama", "model", "release")):
         content_type = "frontier_leak"
     elif post.source_type == "official":
         content_type = "official_announce"
     return {
-        "summary": snippet or f"来自 @{post.handle} 的帖子",
+        # Dry-run keeps source text as the stored "translation" stand-in.
+        "summary": text or f"来自 @{post.handle} 的帖子",
         "content_type": content_type,
         "entities": [e for e in [post.organization, post.handle] if e],
         "uncertainty": None,
@@ -81,7 +85,7 @@ def build_summary_user_prompt(post: Post) -> str:
         "text": post.text,
     }
     return (
-        "请为以下帖子生成摘要 JSON。\n\n"
+        "请为以下帖子生成忠实中文翻译 JSON（summary 字段）。\n\n"
         + json.dumps(payload, ensure_ascii=False, indent=2)
     )
 
@@ -129,9 +133,12 @@ def ensure_pending_summaries(session: Session, run: Run) -> list[PostSummary]:
 
 
 def _apply_payload(row: PostSummary, post: Post, payload: dict[str, Any]) -> None:
-    summary = truncate_summary(str(payload.get("summary") or ""))
+    summary = str(payload.get("summary") or "").strip()
     if not summary:
         raise ValueError("empty summary")
+    # v1 runs historically compressed to 100 chars; keep that only when frozen on v1.
+    if (row.prompt_version or "").startswith("v1"):
+        summary = truncate_summary(summary, limit=MAX_SUMMARY_CHARS)
     entities = payload.get("entities") or []
     if not isinstance(entities, list):
         entities = []

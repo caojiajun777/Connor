@@ -26,17 +26,18 @@ class EvaluateBatchResult:
     evaluation_ids: list[str] = field(default_factory=list)
 
 
-def load_evaluation_system_prompt(version: str = "v1") -> str:
+def load_evaluation_system_prompt(version: str = "v2") -> str:
     path = prompt_path(version, "evaluation")
     if path.exists():
         return path.read_text(encoding="utf-8")
-    return "Score the summary card with importance/information_gain/specificity/frontier 0-10 JSON."
+    return "Score the post text with importance/information_gain/specificity/frontier 0-10 JSON."
 
 
 def mock_evaluation_payload(summary: PostSummary, post: Post) -> dict[str, Any]:
-    """Deterministic offline scores for dry-run / tests."""
-    text = (summary.summary or post.text or "").lower()
+    """Deterministic offline scores for dry-run / tests (driven by post.text)."""
+    text = (post.text or summary.summary or "").lower()
     base = 4.0
+    # Weak signals from bound translation metadata (optional).
     if summary.content_type == "frontier_leak":
         base = 8.0
     elif summary.content_type == "official_announce":
@@ -45,18 +46,23 @@ def mock_evaluation_payload(summary: PostSummary, post: Post) -> dict[str, Any]:
         base = 7.0
     elif summary.content_type == "noise":
         base = 2.0
+    if post.source_type == "official" and base < 7.0:
+        base = 7.0
     if any(k in text for k in ("gpt", "claude", "gemini", "llama", "release", "benchmark")):
         base = min(10.0, base + 1.0)
     # Stable jitter from post_id digits
     digits = "".join(ch for ch in post.post_id if ch.isdigit()) or "0"
     jitter = (int(digits[-2:]) % 10) / 20.0  # 0–0.45
     score = round(min(10.0, base + jitter), 2)
+    category = summary.content_type or "unknown"
+    if "leak" in text or "rumor" in text:
+        category = "frontier_leak"
     return {
         "importance_score": score,
         "information_gain_score": round(max(0.0, score - 0.5), 2),
         "specificity_score": round(max(0.0, score - 0.3), 2),
-        "frontier_score": round(score if "leak" in (summary.content_type or "") else score - 0.2, 2),
-        "content_category": summary.content_type or "unknown",
+        "frontier_score": round(score if "leak" in (category or "") else score - 0.2, 2),
+        "content_category": category,
         "evaluation_reason": f"mock score for @{post.handle}",
     }
 
@@ -68,12 +74,14 @@ def build_evaluation_user_prompt(summary: PostSummary, post: Post) -> str:
         "source_role": post.source_type,
         "organization": post.organization,
         "published_at": post.published_at.isoformat() if post.published_at else None,
-        "summary": summary.summary,
-        "content_type": summary.content_type,
-        "uncertainty": summary.uncertainty,
+        "post_type": post.post_type,
+        "text": post.text,
         "canonical_url": post.url,
+        # Provenance only — do not treat as the scored content.
+        "bound_summary_id": summary.id,
+        "zh_translation": summary.summary,
     }
-    return "请为以下摘要卡片打分 JSON。\n\n" + json.dumps(card, ensure_ascii=False, indent=2)
+    return "请为以下帖子原文打分 JSON。\n\n" + json.dumps(card, ensure_ascii=False, indent=2)
 
 
 def _clamp(value: Any, default: float = 0.0) -> float:

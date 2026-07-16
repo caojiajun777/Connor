@@ -74,6 +74,8 @@ def test_load_real_project_watchlist() -> None:
     assert "zai_org" in handles
     assert "xiaomimimo" in handles
     assert "xiaomimimodevs" in handles
+    assert "spacexai" in handles
+    assert "xai" in handles
     openai = next(account for account in config.accounts if account.handle == "OpenAI")
     assert openai.max_posts_per_run == 0
     logan = next(account for account in config.accounts if account.handle == "OfficialLoganK")
