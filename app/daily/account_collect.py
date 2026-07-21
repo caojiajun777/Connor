@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -14,10 +15,22 @@ from app.x_watchlist.normalizer import normalize_mcp_post
 from app.x_watchlist.schemas import NormalizedPost, XSourceAccount, utc_now_iso
 
 FETCH_PAGE_SIZE = 20
-MAX_PAGES_PER_ACCOUNT = 20
 MAX_NEW_POSTS_SAFETY_LIMIT = 200
-EMPTY_POSTS_MAX_RETRIES = 2
-CHASE_HOURS = 72
+# Steady-state page cap (cursor hits usually stop earlier).
+MAX_PAGES_PER_ACCOUNT = int(os.environ.get("CONNOR_MAX_PAGES_PER_ACCOUNT", "20"))
+# No-cursor / first-run: stop sooner — one calendar day rarely needs 20 pages.
+FIRST_RUN_MAX_PAGES = int(os.environ.get("CONNOR_FIRST_RUN_MAX_PAGES", "5"))
+# Empty first page: 1 retry is enough; more mostly burns time on quiet accounts.
+EMPTY_POSTS_MAX_RETRIES = int(os.environ.get("CONNOR_EMPTY_POSTS_MAX_RETRIES", "1"))
+# Override with CONNOR_CHASE_HOURS for first-day / narrowed windows (default 72).
+CHASE_HOURS = int(os.environ.get("CONNOR_CHASE_HOURS", "72"))
+
+
+def page_cap_for_account(*, has_cursor: bool) -> int:
+    """First-run (no cursor) uses a tighter page budget."""
+    if has_cursor:
+        return max(1, MAX_PAGES_PER_ACCOUNT)
+    return max(1, min(MAX_PAGES_PER_ACCOUNT, FIRST_RUN_MAX_PAGES))
 
 
 @dataclass
@@ -72,8 +85,9 @@ async def _fetch_pages_until_boundary(
     pages = 0
     incomplete = False
     window_start = datetime.now(timezone.utc) - timedelta(hours=CHASE_HOURS)
+    page_cap = page_cap_for_account(has_cursor=bool(old_cursor_post_id))
 
-    while pages < MAX_PAGES_PER_ACCOUNT:
+    while pages < page_cap:
         pages += 1
         result = await client.profile_posts(
             account.handle,
@@ -139,7 +153,7 @@ async def _fetch_pages_until_boundary(
         next_offset = result.get("next_offset")
         if not has_more or not posts_raw:
             break
-        if pages >= MAX_PAGES_PER_ACCOUNT:
+        if pages >= page_cap:
             incomplete = has_more
             break
         if not isinstance(next_offset, int):
@@ -180,7 +194,7 @@ async def collect_one_account_incremental(
                 collected_at=collected_at,
                 old_cursor_post_id=old_id,
             )
-            if raw or (not old_id and attempt == attempts):
+            if raw:
                 scan_posts = [_to_scan_post(p) for p in normalized]
                 scan = scan_timeline_increments(
                     scan_posts,
@@ -205,6 +219,8 @@ async def collect_one_account_incremental(
             if attempt < attempts:
                 await asyncio.sleep(2 * attempt)
 
+        # Never treat a zero-post fetch as success (including first-run accounts).
+        # Empty timelines used to slip through as success+0 and silently drop leak coverage.
         raise MCPClientError(
             "mcp_empty_posts",
             f"MCP returned zero posts for @{account.handle} after {attempts} attempts",

@@ -19,8 +19,24 @@ def create_session_factory(engine: Engine) -> sessionmaker[Session]:
 
 
 def init_schema(engine: Engine) -> None:
-    """Create all daily-agent tables (idempotent for empty DB)."""
+    """Create all daily-agent tables (idempotent for empty DB) and additive columns."""
     Base.metadata.create_all(engine)
+    _ensure_additive_columns(engine)
+
+
+def _ensure_additive_columns(engine: Engine) -> None:
+    """create_all does not ALTER existing tables; add public-site columns when missing."""
+    statements = [
+        "ALTER TABLE posts ADD COLUMN IF NOT EXISTS visibility_status VARCHAR(32) NOT NULL DEFAULT 'visible'",
+        "ALTER TABLE posts ADD COLUMN IF NOT EXISTS author_avatar_source_url TEXT",
+        "ALTER TABLE posts ADD COLUMN IF NOT EXISTS author_avatar_storage_url TEXT",
+        "ALTER TABLE daily_reports ADD COLUMN IF NOT EXISTS event_packages JSONB NOT NULL DEFAULT '[]'::jsonb",
+        "ALTER TABLE daily_reports ADD COLUMN IF NOT EXISTS body_sections JSONB NOT NULL DEFAULT '[]'::jsonb",
+        "ALTER TABLE daily_reports ADD COLUMN IF NOT EXISTS writer_meta JSONB NOT NULL DEFAULT '{}'::jsonb",
+    ]
+    with engine.begin() as conn:
+        for stmt in statements:
+            conn.execute(text(stmt))
 
 
 @contextmanager

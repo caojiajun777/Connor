@@ -231,7 +231,7 @@ server.registerTool(
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  const pages = process.env.X_AGENT_MAX_CONCURRENT_PAGES ?? "1";
+  const pages = process.env.X_AGENT_MAX_CONCURRENT_PAGES ?? "2";
   console.error(
     `x-news-mcp-server running via stdio (shared browser session, max concurrent pages=${pages})`
   );

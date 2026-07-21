@@ -1,5 +1,6 @@
 import type { Page } from "playwright-core";
 import { profileDir, timeoutMs, X_BASE_URL } from "../constants.js";
+import { firstTweetWaitMs, nextScrollDecision } from "./collect-budget.js";
 import type {
   LoginReasonCode,
   LoginSignals,
@@ -391,7 +392,12 @@ async function collectPosts(page: Page, needed: number): Promise<XPost[]> {
   const seen = new Map<string, XPost>();
   for (let pass = 0; pass < 12 && seen.size < needed; pass += 1) {
     for (const post of await extractPosts(page)) seen.set(post.post_id, post);
-    if (seen.size >= needed) break;
+    const decision = nextScrollDecision({
+      pass,
+      seenCount: seen.size,
+      needed
+    });
+    if (!decision.continueScrolling) break;
     await page.mouse.wheel(0, 1400);
     await page.waitForTimeout(700);
   }
@@ -416,7 +422,7 @@ export async function searchPosts(
   await page
     .locator('article[data-testid="tweet"]')
     .first()
-    .waitFor({ state: "visible", timeout: timeoutMs() })
+    .waitFor({ state: "visible", timeout: firstTweetWaitMs(timeoutMs()) })
     .catch(() => undefined);
 
   const collected = await collectPosts(page, input.offset + input.limit + 1);
@@ -444,7 +450,7 @@ export async function profilePosts(
   await page
     .locator('article[data-testid="tweet"]')
     .first()
-    .waitFor({ state: "visible", timeout: timeoutMs() })
+    .waitFor({ state: "visible", timeout: firstTweetWaitMs(timeoutMs()) })
     .catch(() => undefined);
   const collected = await collectPosts(page, offset + limit + 1);
   const posts = collected.slice(offset, offset + limit);

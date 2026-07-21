@@ -24,20 +24,20 @@ def test_memory_checkpointer_graph_invoke() -> None:
 
 
 def test_schedule_due_window() -> None:
-    cfg = ScheduleConfig(hour=8, minute=0, timezone="Asia/Shanghai", enabled=True)
+    cfg = ScheduleConfig(hour=6, minute=0, timezone="Asia/Shanghai", enabled=True)
     tz = ZoneInfo("Asia/Shanghai")
-    due = datetime(2026, 7, 13, 8, 10, tzinfo=tz)
+    due = datetime(2026, 7, 13, 6, 10, tzinfo=tz)
     assert is_schedule_due(cfg, now=due, grace_minutes=30) is True
-    early = datetime(2026, 7, 13, 7, 50, tzinfo=tz)
+    early = datetime(2026, 7, 13, 5, 50, tzinfo=tz)
     assert is_schedule_due(cfg, now=early, grace_minutes=30) is False
-    late = datetime(2026, 7, 13, 8, 45, tzinfo=tz)
+    late = datetime(2026, 7, 13, 6, 45, tzinfo=tz)
     assert is_schedule_due(cfg, now=late, grace_minutes=30) is False
-    assert cron_expression(cfg) == "0 8 * * *"
+    assert cron_expression(cfg) == "0 6 * * *"
 
 
 def test_schedule_disabled() -> None:
-    cfg = ScheduleConfig(hour=8, minute=0, timezone="UTC", enabled=False)
-    now = datetime(2026, 7, 13, 8, 0, tzinfo=ZoneInfo("UTC"))
+    cfg = ScheduleConfig(hour=6, minute=0, timezone="UTC", enabled=False)
+    now = datetime(2026, 7, 13, 6, 0, tzinfo=ZoneInfo("UTC"))
     assert is_schedule_due(cfg, now=now) is False
 
 

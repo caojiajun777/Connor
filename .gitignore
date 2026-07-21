@@ -17,6 +17,7 @@ htmlcov/
 .env
 .x-agent-profile/
 data/
+artifacts/
 
 # OS / editor
 .DS_Store

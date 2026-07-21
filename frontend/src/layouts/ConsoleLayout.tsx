@@ -5,6 +5,7 @@ const links = [
   { to: '/console', end: true, label: 'Overview' },
   { to: '/console/runs', label: 'Runs' },
   { to: '/console/editorial', label: 'Editorial' },
+  { to: '/console/watchlist', label: 'Watchlist' },
 ]
 
 export function ConsoleLayout() {

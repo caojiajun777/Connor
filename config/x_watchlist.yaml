@@ -1,5 +1,7 @@
-version: 1
+version: 2
 
+# priority only affects collection retry, alerts, and operational ordering.
+# It must not affect Evaluation scores or Top K selection.
 defaults:
   official:
     include_originals: true
@@ -8,6 +10,7 @@ defaults:
     include_reposts: true
     max_posts_per_run: 0
     priority: P0
+
   employee:
     include_originals: true
     include_quotes: true
@@ -15,6 +18,15 @@ defaults:
     include_reposts: true
     max_posts_per_run: 0
     priority: P0
+
+  analyst:
+    include_originals: true
+    include_quotes: true
+    include_replies: true
+    include_reposts: true
+    max_posts_per_run: 0
+    priority: P1
+
   leak:
     include_originals: true
     include_quotes: true
@@ -24,156 +36,761 @@ defaults:
     priority: P1
 
 accounts:
-  # --- Official accounts ---
+
+  # ============================================================
+  # Official — 35
+  # ============================================================
+
+  # --- Frontier model labs and products ---
   - handle: OpenAI
     display_name: OpenAI
     organization: OpenAI
     source_type: official
+
   - handle: OpenAIDevs
     display_name: OpenAI Developers
     organization: OpenAI
     source_type: official
+
   - handle: AnthropicAI
     display_name: Anthropic
     organization: Anthropic
     source_type: official
+
   - handle: claudeai
     display_name: Claude
     organization: Anthropic
     source_type: official
+
   - handle: GoogleDeepMind
     display_name: Google DeepMind
     organization: Google
     source_type: official
+
   - handle: GoogleAI
     display_name: Google AI
     organization: Google
     source_type: official
+
   - handle: GeminiApp
     display_name: Gemini
     organization: Google
     source_type: official
-  - handle: xai
-    display_name: xAI
-    organization: xAI
-    source_type: official
+
   - handle: SpaceXAI
     display_name: SpaceXAI
     organization: SpaceXAI
     source_type: official
+
   - handle: AIatMeta
     display_name: AI at Meta
     organization: Meta
     source_type: official
+
+  - handle: MicrosoftAI
+    display_name: Microsoft AI
+    organization: Microsoft
+    source_type: official
+
+  - handle: NVIDIAAI
+    display_name: NVIDIA AI
+    organization: NVIDIA
+    source_type: official
+
   - handle: deepseek_ai
     display_name: DeepSeek
     organization: DeepSeek
     source_type: official
+    notes: "Sole official DeepSeek X account (WeChat + RedNote are the other two)."
+
   - handle: Alibaba_Qwen
     display_name: Qwen
     organization: Alibaba
     source_type: official
+
   - handle: MistralAI
     display_name: Mistral AI
     organization: Mistral
     source_type: official
+
+  - handle: cohere
+    display_name: Cohere
+    organization: Cohere
+    source_type: official
+
+  - handle: SakanaAILabs
+    display_name: Sakana AI
+    organization: Sakana AI
+    source_type: official
+
+  # --- China frontier models ---
   - handle: Kimi_Moonshot
     display_name: Kimi
-    organization: Moonshot
+    organization: Moonshot AI
     source_type: official
+
   - handle: Zai_org
     display_name: Z.ai
     organization: Zhipu AI
     source_type: official
-    priority: P0
+
   - handle: MiniMax_AI
     display_name: MiniMax
     organization: MiniMax
     source_type: official
+
   - handle: TencentHunyuan
     display_name: Tencent Hunyuan
     organization: Tencent
     source_type: official
+
   - handle: XiaomiMiMo
     display_name: Xiaomi MiMo
     organization: Xiaomi
     source_type: official
-    priority: P0
+
   - handle: XiaomiMiMoDevs
     display_name: Xiaomi MiMo Developers
     organization: Xiaomi
     source_type: official
     priority: P1
+
   - handle: StepFun_ai
     display_name: StepFun
     organization: StepFun
     source_type: official
-  - handle: ByteDanceOSS
-    display_name: ByteDance OSS
-    organization: ByteDance
+
+  # --- Coding agents, open ecosystem and infrastructure ---
+  - handle: cursor_ai
+    display_name: Cursor
+    organization: Cursor
     source_type: official
 
-  # --- Core employees and technical staff ---
+  - handle: cognition
+    display_name: Cognition
+    organization: Cognition
+    source_type: official
+
+  - handle: GitHubCopilot
+    display_name: GitHub Copilot
+    organization: GitHub
+    source_type: official
+
+  - handle: OpenRouter
+    display_name: OpenRouter
+    organization: OpenRouter
+    source_type: official
+    priority: P1
+
+  - handle: LangChain
+    display_name: LangChain
+    organization: LangChain
+    source_type: official
+    priority: P1
+
+  - handle: vllm_project
+    display_name: vLLM
+    organization: vLLM
+    source_type: official
+    priority: P1
+
+  - handle: browserbase
+    display_name: Browserbase
+    organization: Browserbase
+    source_type: official
+    priority: P1
+
+  - handle: huggingface
+    display_name: Hugging Face
+    organization: Hugging Face
+    source_type: official
+    priority: P1
+
+  # --- Multimodal and embodied AI ---
+  - handle: RunwayML
+    display_name: Runway
+    organization: Runway
+    source_type: official
+    priority: P1
+
+  - handle: elevenlabsio
+    display_name: ElevenLabs
+    organization: ElevenLabs
+    source_type: official
+    priority: P1
+
+  - handle: physical_int
+    display_name: Physical Intelligence
+    organization: Physical Intelligence
+    source_type: official
+    priority: P1
+
+  - handle: Figure_robot
+    display_name: Figure
+    organization: Figure AI
+    source_type: official
+    priority: P1
+
+
+  # ============================================================
+  # Employee — 54
+  # Personal accounts are included only when their timelines
+  # function as vertical professional intelligence feeds.
+  # ============================================================
+
+  # --- OpenAI ---
   - handle: thsottiaux
-    display_name: Thomas Ottiaux
+    display_name: Thibault Sottiaux
     organization: OpenAI
     source_type: employee
+    role: Codex engineering
+
   - handle: gabrielchua
     display_name: Gabriel Chua
     organization: OpenAI
     source_type: employee
+
   - handle: markchen90
     display_name: Mark Chen
     organization: OpenAI
     source_type: employee
+
+  - handle: sama
+    display_name: Sam Altman
+    organization: OpenAI
+    source_type: employee
+    role: CEO
+
+  - handle: gdb
+    display_name: Greg Brockman
+    organization: OpenAI
+    source_type: employee
+    role: President and Co-founder
+
+  - handle: polynoamial
+    display_name: Noam Brown
+    organization: OpenAI
+    source_type: employee
+    role: Researcher
+
+  # --- Anthropic ---
   - handle: bcherny
     display_name: Boris Cherny
     organization: Anthropic
     source_type: employee
+    role: Claude Code
+
+  - handle: _catwu
+    display_name: Cat Wu
+    organization: Anthropic
+    source_type: employee
+    role: Claude Code product
+
+  - handle: alexalbert__
+    display_name: Alex Albert
+    organization: Anthropic
+    source_type: employee
+    role: Research and product
+
+  - handle: AmandaAskell
+    display_name: Amanda Askell
+    organization: Anthropic
+    source_type: employee
+    role: Alignment researcher
+
+  - handle: ch402
+    display_name: Chris Olah
+    organization: Anthropic
+    source_type: employee
+    role: Interpretability researcher
+
+  - handle: janleike
+    display_name: Jan Leike
+    organization: Anthropic
+    source_type: employee
+    role: Alignment researcher
+
+  - handle: jackclarkSF
+    display_name: Jack Clark
+    organization: Anthropic
+    source_type: employee
+    role: Co-founder
+
+  - handle: DarioAmodei
+    display_name: Dario Amodei
+    organization: Anthropic
+    source_type: employee
+    role: CEO and Co-founder
+
+  # --- Google / Google DeepMind ---
   - handle: OfficialLoganK
     display_name: Logan Kilpatrick
     organization: Google
     source_type: employee
-    notes: "Formerly OpenAI; currently Google AI Studio / Gemini. Verify periodically."
+
+  - handle: OriolVinyalsML
+    display_name: Oriol Vinyals
+    organization: Google DeepMind
+    source_type: employee
+    role: VP of Research; Gemini co-lead
+
+  - handle: demishassabis
+    display_name: Demis Hassabis
+    organization: Google DeepMind
+    source_type: employee
+    role: CEO
+
+  - handle: koraykv
+    display_name: Koray Kavukcuoglu
+    organization: Google DeepMind
+    source_type: employee
+    role: CTO
+
+  - handle: JeffDean
+    display_name: Jeff Dean
+    organization: Google
+    source_type: employee
+    role: Chief Scientist
+
+  - handle: YiTayML
+    display_name: Yi Tay
+    organization: Google DeepMind
+    source_type: employee
+    role: Research scientist
+
+  - handle: lmthang
+    display_name: Thang Luong
+    organization: Google DeepMind
+    source_type: employee
+    role: Research director
+
+  # --- Mistral ---
   - handle: arthurmensch
     display_name: Arthur Mensch
     organization: Mistral
     source_type: employee
+    role: CEO and Co-founder
+
   - handle: GuillaumeLample
     display_name: Guillaume Lample
     organization: Mistral
     source_type: employee
-  - handle: JustinLin610
-    display_name: Justin Lin
-    organization: DeepSeek
-    source_type: employee
+    role: Co-founder and Chief Scientist
+
+  # --- Meta ---
   - handle: alexandr_wang
     display_name: Alexandr Wang
-    organization: Scale AI
+    organization: Meta
+    source_type: employee
+    role: Chief AI Officer
+
+  # --- Cursor ---
+  - handle: leerob
+    display_name: Lee Robinson
+    organization: Cursor
+    source_type: employee
+    role: ML and model behavior
+
+  - handle: amanrsanger
+    display_name: Aman Sanger
+    organization: Cursor
+    source_type: employee
+    role: Co-founder
+
+  - handle: mntruell
+    display_name: Michael Truell
+    organization: Cursor
+    source_type: employee
+    role: CEO and Co-founder
+
+  # --- NVIDIA ---
+  - handle: DrJimFan
+    display_name: Jim Fan
+    organization: NVIDIA
+    source_type: employee
+    role: Director of Robotics
+
+  - handle: ctnzr
+    display_name: Bryan Catanzaro
+    organization: NVIDIA
+    source_type: employee
+    role: VP of Applied Deep Learning Research
+
+  # --- Cohere ---
+  - handle: aidangomez
+    display_name: Aidan Gomez
+    organization: Cohere
+    source_type: employee
+    role: CEO and Co-founder
+
+  # --- Sakana AI ---
+  - handle: hardmaru
+    display_name: David Ha
+    organization: Sakana AI
+    source_type: employee
+    role: CEO and Co-founder
+
+  - handle: YesThisIsLion
+    display_name: Llion Jones
+    organization: Sakana AI
+    source_type: employee
+    role: CTO and Co-founder
+
+  # --- Microsoft AI ---
+  - handle: mustafasuleyman
+    display_name: Mustafa Suleyman
+    organization: Microsoft AI
+    source_type: employee
+    role: CEO
+
+  # --- Thinking Machines / SSI / Hugging Face ---
+  - handle: miramurati
+    display_name: Mira Murati
+    organization: Thinking Machines Lab
+    source_type: employee
+    role: CEO and Co-founder
+
+  - handle: ilyasut
+    display_name: Ilya Sutskever
+    organization: Safe Superintelligence
+    source_type: employee
+    role: Co-founder
+
+  - handle: ClementDelangue
+    display_name: Clément Delangue
+    organization: Hugging Face
+    source_type: employee
+    role: CEO and Co-founder
+
+  - handle: Thom_Wolf
+    display_name: Thomas Wolf
+    organization: Hugging Face
+    source_type: employee
+    role: Co-founder and Chief Science Officer
+
+  # --- DeepSeek (current staff only) ---
+  - handle: sybilhyz
+    display_name: Peiyi Wang
+    organization: DeepSeek
+    source_type: employee
+    role: Researcher
+    notes: "DeepSeekMath / R1 co-author; rare active staff account."
+
+  - handle: zhs05232838
+    display_name: Zhihong Shao
+    organization: DeepSeek
+    source_type: employee
+    role: Research Scientist
+    notes: "DeepSeekMath / GRPO / R1 core; MIT TR35."
+
+  # --- ByteDance Seed ---
+  - handle: Guodaya
+    display_name: Daya Guo
+    organization: ByteDance Seed
+    source_type: employee
+    role: Agent Lead
+    notes: "Code / agent research lead at Seed."
+
+  # --- MiniMax ---
+  - handle: SkylerMiao7
+    display_name: Skyler Miao
+    organization: MiniMax
+    source_type: employee
+    role: Head of Engineering
+
+  - handle: zpysky1125
+    display_name: Pengyu Zhao
+    organization: MiniMax
+    source_type: employee
+    role: LLM Lead
+
+  # --- GLM / Z.ai ---
+  - handle: jietang
+    display_name: Jie Tang
+    organization: Z.ai
+    source_type: employee
+    role: Founder
+
+  - handle: CarolGLMs
+    display_name: Carol Lin
+    organization: Z.ai
+    source_type: employee
+    role: Builder
+
+  # --- Xiaomi MiMo ---
+  - handle: _LuoFuli
+    display_name: Fuli Luo
+    organization: Xiaomi MiMo
+    source_type: employee
+    role: MiMo Lead
+
+  - handle: dwzhu128
+    display_name: Dawei Zhu
+    organization: Xiaomi MiMo
+    source_type: employee
+    priority: P1
+
+  - handle: 99Solaris
+    display_name: Yifan Song
+    organization: Xiaomi MiMo
+    source_type: employee
+    priority: P1
+
+  # --- Qwen ---
+  - handle: ChujieZheng
+    display_name: Chujie Zheng
+    organization: Alibaba Qwen
+    source_type: employee
+    role: Researcher
+
+  # --- Kimi / Moonshot AI ---
+  - handle: Yulun_Du
+    display_name: Yulun Du
+    organization: Moonshot AI
     source_type: employee
 
-  # --- Leak and frontier observation accounts ---
-  - handle: LuminaXspace
-    display_name: LuminaXspace
-    organization: null
-    source_type: leak
-  - handle: testingcatalog
-    display_name: Testing Catalog
-    organization: null
-    source_type: leak
-  - handle: ArtificialAnlys
-    display_name: Artificial Analysis
-    organization: null
-    source_type: analyst
+  - handle: ChenzhuangDu
+    display_name: Chenzhuang Du
+    organization: Moonshot AI
+    source_type: employee
+    role: Technical Staff
+    priority: P1
+
+  - handle: nathancgy4
+    display_name: Nathan Chen
+    organization: Moonshot AI
+    source_type: employee
+    role: Member of Technical Staff
+    priority: P1
+
+  # --- Tencent Hunyuan ---
+  - handle: CanXu20
+    display_name: Can Xu
+    organization: Tencent Hunyuan
+    source_type: employee
+    role: Principal Researcher
+
+  - handle: DylanTFWang
+    display_name: Tengfei Wang
+    organization: Tencent Hunyuan
+    source_type: employee
+    role: World Model Team Lead
+
+  - handle: TFang229
+    display_name: Tianqing Fang
+    organization: Tencent AI Lab
+    source_type: employee
+    role: Researcher
+    priority: P1
+
+
+  # ============================================================
+  # Analyst — 20
+  # Aggregator / low-signal blogger accounts (Baoyu-class) are kept
+  # off this list: @dotey, @altryne, @rohanpaul_ai, @TechBuzzChina.
+  # ============================================================
+
+  # --- Models, papers and technical analysis ---
   - handle: simonw
     display_name: Simon Willison
     organization: null
-    source_type: technical_analyst
+    source_type: analyst
+
   - handle: rasbt
     display_name: Sebastian Raschka
     organization: null
-    source_type: technical_analyst
-  - handle: scaling01
-    display_name: Scaling01
+    source_type: analyst
+
+  - handle: JustinLin610
+    display_name: Junyang Lin
     organization: null
-    source_type: leak_and_opinion
+    source_type: analyst
+    notes: "Independent researcher; former Qwen core lead."
+
+  - handle: natolambert
+    display_name: Nathan Lambert
+    organization: null
+    source_type: analyst
+
+  - handle: fchollet
+    display_name: François Chollet
+    organization: Ndea
+    source_type: analyst
+
+  # --- Benchmarks, evaluations and capability research ---
+  - handle: ArtificialAnlys
+    display_name: Artificial Analysis
+    organization: Artificial Analysis
+    source_type: analyst
+
+  - handle: EpochAIResearch
+    display_name: Epoch AI
+    organization: Epoch AI
+    source_type: analyst
+
+  - handle: METR_Evals
+    display_name: METR
+    organization: METR
+    source_type: analyst
+
+  - handle: HamelHusain
+    display_name: Hamel Husain
+    organization: null
+    source_type: analyst
+
+  - handle: sh_reya
+    display_name: Shreya Shankar
+    organization: null
+    source_type: analyst
+
+  # --- Agent engineering and development practice ---
+  - handle: mitchellh
+    display_name: Mitchell Hashimoto
+    organization: null
+    source_type: analyst
+
+  - handle: swyx
+    display_name: swyx
+    organization: null
+    source_type: analyst
+
+  - handle: latentspacepod
+    display_name: Latent Space
+    organization: Latent Space
+    source_type: analyst
+
+  - handle: AndrewYNg
+    display_name: Andrew Ng
+    organization: DeepLearning.AI
+    source_type: analyst
+
+  # --- Chips, industry and broad frontier analysis ---
+  - handle: SemiAnalysis_
+    display_name: SemiAnalysis
+    organization: SemiAnalysis
+    source_type: analyst
+
+  - handle: dylan522p
+    display_name: Dylan Patel
+    organization: SemiAnalysis
+    source_type: analyst
+
+  - handle: dwarkesh_sp
+    display_name: Dwarkesh Patel
+    organization: null
+    source_type: analyst
+
+  - handle: emollick
+    display_name: Ethan Mollick
+    organization: University of Pennsylvania
+    source_type: analyst
+
+  # --- China AI analysis ---
+  - handle: huybery
+    display_name: Binyuan Hui
+    organization: null
+    source_type: analyst
+    notes: "Former Qwen core member."
+
+  - handle: WeijinResearch
+    display_name: Weijin Research
+    organization: Weijin Research
+    source_type: analyst
+
+  # Removed (aggregator / low-signal blogger noise):
+  #   @dotey (Baoyu), @altryne, @rohanpaul_ai, @TechBuzzChina
+
+
+  # ============================================================
+  # Leak / frontier intelligence — 16
+  # ============================================================
+
+  # --- AI product and model intelligence ---
+  - handle: LuminaXspace
+    display_name: Lumina
+    organization: Lumina
+    source_type: leak
+
+  - handle: testingcatalog
+    display_name: TestingCatalog
+    organization: TestingCatalog
+    source_type: leak
+
+  - handle: btibor91
+    display_name: Tibor Blaho
+    organization: null
+    source_type: leak
+
+  - handle: M1Astra
+    display_name: M1
+    organization: null
+    source_type: leak
+
+  # --- DeepSeek / China open-frontier watchers ---
+  - handle: teortaxesTex
+    display_name: Teortaxes
+    organization: null
+    source_type: leak
+    notes: "Highest-signal DeepSeek watcher; model IDs, pricing, GA timing."
+
+  - handle: LinearUncle
+    display_name: LinearUncle
+    organization: null
+    source_type: leak
+    notes: "China AI release timing (DeepSeek / GLM / peers)."
+
+  - handle: oran_ge
+    display_name: oran_ge
+    organization: null
+    source_type: leak
+    notes: "China frontier rumor roundups including DeepSeek."
+
+  - handle: MiaAI_lab
+    display_name: MiaAI Lab
+    organization: null
+    source_type: leak
+    notes: "DeepSeek deploy/release signals and local inference notes."
+
+  # --- App, web and client reverse engineering ---
+  - handle: AssembleDebug
+    display_name: AssembleDebug
+    organization: null
+    source_type: leak
+
+  - handle: nima_owji
+    display_name: Nima Owji
+    organization: null
+    source_type: leak
+
+  - handle: alex193a
+    display_name: Alessandro Paluzzi
+    organization: null
+    source_type: leak
+
+  - handle: Leopeva64
+    display_name: Leopeva64
+    organization: null
+    source_type: leak
+
+  # --- Pre-release model observation ---
+  - handle: arena
+    display_name: Arena
+    organization: Arena
+    source_type: leak
+
+  # --- Institutional scoops ---
+  - handle: theinformation
+    display_name: The Information
+    organization: The Information
+    source_type: leak
+
+  # --- Chips and supply-chain intelligence ---
+  - handle: TechInsightsInc
+    display_name: TechInsights
+    organization: TechInsights
+    source_type: leak
+
+  - handle: trendforce
+    display_name: TrendForce
+    organization: TrendForce
+    source_type: leak

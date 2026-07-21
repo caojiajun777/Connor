@@ -51,6 +51,27 @@ class PublicationStatus(str, Enum):
     WITHDRAWN = "withdrawn"
 
 
+class VisibilityStatus(str, Enum):
+    VISIBLE = "visible"
+    HIDDEN = "hidden"
+    REMOVED_SOURCE = "removed_source"
+    TAKEDOWN = "takedown"
+
+
+class MediaType(str, Enum):
+    IMAGE = "image"
+    VIDEO = "video"
+    GIF = "gif"
+
+
+class MediaDownloadStatus(str, Enum):
+    PENDING = "pending"
+    DOWNLOADING = "downloading"
+    READY = "ready"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+
+
 class AnnotationRunStatus(str, Enum):
     PENDING = "pending"
     IN_PROGRESS = "in_progress"

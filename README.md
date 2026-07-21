@@ -91,6 +91,11 @@ python -m app.cli x-watchlist collect
 
 # 指定账号
 python -m app.cli x-watchlist collect --handles OpenAI,thsottiaux,LuminaXspace
+
+# Watchlist 元数据核查（只出 Diff 报告，不写回 YAML）
+python -m app.cli x-watchlist audit-accounts --handles JustinLin610,alexandr_wang --dry-run
+python -m app.cli x-watchlist audit-accounts --stale
+python -m app.cli x-watchlist audit-accounts --all
 ```
 
 产物目录：`data/x_watchlist_runs/<run_id>/`（`run.json`、`raw_posts.json`、`clean_posts.json`、`coverage.json` 等）。游标：`data/x_watchlist_cursors.json`。
@@ -183,6 +188,42 @@ npm run dev
 ```
 
 浏览器打开 `http://127.0.0.1:5173/console`。人工标注写入独立 `annotation_*` 表，不修改生产 selection / evaluation。
+
+## Connor.ai 公开网站
+
+公开站与 Console 分离，只读已发布日报。详见 [`web/README.md`](web/README.md) 与 [`docs/public-site.md`](docs/public-site.md)。
+
+```powershell
+# API（含 /api/public/* 与本地 /media/*）
+python -m app.cli daily serve-api --port 8080
+
+# 公开前端
+cd web
+npm install
+npm run dev
+```
+
+浏览器打开 `http://127.0.0.1:3000`。
+
+发布日报（入选 ≠ 发布；忠实翻译 ≠ 日报正文）：
+
+```powershell
+# 事件包 + Writer → 未发布草稿（标题 / 导语 / 分层正文）
+python -m app.cli daily write-report --run-id <RUN_ID> --date 2026-07-16
+# 无 LLM 时：加 --dry-run
+python -m app.cli daily publish-report --report-id <REPORT_ID>
+# 可选：--accept-partial-media / --no-download
+```
+
+无真实已发布数据时可用 fixture 预览 UI：
+
+```powershell
+cd web
+$env:CONNOR_PUBLIC_USE_FIXTURE="1"
+npm run dev
+```
+
+媒体环境变量（可选）：`CONNOR_MEDIA_STORAGE`（`local`|`s3`）、`CONNOR_MEDIA_PUBLIC_BASE_URL`、`CONNOR_MEDIA_LOCAL_ROOT`、`CONNOR_MEDIA_S3_*`。
 
 
 - 本工具只读，不点赞、不关注、不转发、不发帖。

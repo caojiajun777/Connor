@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 900" fill="none">
+  <defs>
+    <linearGradient id="skin" x1="280" y1="160" x2="520" y2="720" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#e8eef3"/>
+      <stop offset="45%" stop-color="#c9d4de"/>
+      <stop offset="100%" stop-color="#9aabb8"/>
+    </linearGradient>
+    <linearGradient id="shade" x1="400" y1="200" x2="560" y2="680" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0b1117" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#0b1117" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Abstract head silhouette -->
+  <path
+    d="M400 140
+       C300 140 230 220 220 320
+       C210 430 230 520 250 600
+       C270 680 320 740 400 760
+       C480 740 530 680 550 600
+       C570 520 590 430 580 320
+       C570 220 500 140 400 140Z"
+    fill="url(#skin)"
+  />
+  <path
+    d="M400 140
+       C300 140 230 220 220 320
+       C210 430 230 520 250 600
+       C270 680 320 740 400 760
+       C480 740 530 680 550 600
+       C570 520 590 430 580 320
+       C570 220 500 140 400 140Z"
+    fill="url(#shade)"
+  />
+  <!-- Jaw / cheek planes -->
+  <path d="M260 480 L340 560 L400 580 L460 560 L540 480" stroke="#8ea0ad" stroke-opacity="0.55" stroke-width="1.5"/>
+  <path d="M300 300 L340 260 L400 245 L460 260 L500 300" stroke="#8ea0ad" stroke-opacity="0.4" stroke-width="1.2"/>
+  <!-- Nose bridge geometry -->
+  <path d="M400 340 L385 430 L400 455 L415 430 Z" fill="#b7c5d0" fill-opacity="0.65"/>
+  <!-- Mouth line -->
+  <path d="M355 545 C380 565 420 565 445 545" stroke="#6d7e8c" stroke-width="2" stroke-linecap="round"/>
+  <!-- Left temple LED panel -->
+  <rect x="198" y="300" width="36" height="92" rx="6" fill="#0f1720" stroke="#2f9bff" stroke-opacity="0.7" stroke-width="1.5"/>
+  <rect x="206" y="312" width="20" height="8" rx="2" fill="#2f9bff" fill-opacity="0.9"/>
+  <rect x="206" y="328" width="20" height="8" rx="2" fill="#2f9bff" fill-opacity="0.45"/>
+  <rect x="206" y="344" width="20" height="8" rx="2" fill="#2f9bff" fill-opacity="0.7"/>
+  <rect x="206" y="360" width="20" height="8" rx="2" fill="#2f9bff" fill-opacity="0.3"/>
+  <!-- Neck / collar plane -->
+  <path d="M320 720 C350 780 450 780 480 720 L455 800 H345 Z" fill="#1a2430"/>
+  <path d="M345 800 H455" stroke="#2f9bff" stroke-opacity="0.25" stroke-width="1"/>
+</svg>

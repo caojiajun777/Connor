@@ -25,6 +25,14 @@ DEFAULT_RULES: dict[str, dict[str, Any]] = {
         "max_posts_per_run": 0,
         "priority": "P0",
     },
+    "analyst": {
+        "include_originals": True,
+        "include_quotes": True,
+        "include_replies": True,
+        "include_reposts": True,
+        "max_posts_per_run": 0,
+        "priority": "P1",
+    },
     "leak": {
         "include_originals": True,
         "include_quotes": True,
@@ -35,13 +43,12 @@ DEFAULT_RULES: dict[str, dict[str, Any]] = {
     },
 }
 
-# Analyst-type accounts inherit leak defaults unless overridden in YAML defaults block.
-ANALYST_SOURCE_TYPES = {
-    SourceType.ANALYST.value,
-    SourceType.TECHNICAL_ANALYST.value,
-    SourceType.LEAK_AND_OPINION.value,
-    SourceType.PRODUCT_SIGNAL.value,
-    SourceType.BENCHMARK.value,
+# Legacy aliases still accepted in YAML; merge via analyst/leak defaults.
+LEGACY_DEFAULT_ALIASES = {
+    SourceType.TECHNICAL_ANALYST.value: "analyst",
+    SourceType.LEAK_AND_OPINION.value: "leak",
+    SourceType.PRODUCT_SIGNAL.value: "analyst",
+    SourceType.BENCHMARK.value: "analyst",
 }
 
 VALID_SOURCE_TYPES = {item.value for item in SourceType}
@@ -54,8 +61,8 @@ class WatchlistConfigError(Exception):
 def _resolve_defaults_key(source_type: str) -> str:
     if source_type in DEFAULT_RULES:
         return source_type
-    if source_type in ANALYST_SOURCE_TYPES:
-        return "leak"
+    if source_type in LEGACY_DEFAULT_ALIASES:
+        return LEGACY_DEFAULT_ALIASES[source_type]
     raise WatchlistConfigError(
         f"Unknown source_type '{source_type}'. Valid values: {sorted(VALID_SOURCE_TYPES)}"
     )

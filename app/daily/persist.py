@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.daily.db.models import AccountRun, CursorSyncOutbox, Post, RunPost
 from app.daily.eligibility import cursor_eligible_from_normalized
 from app.daily.enums import CollectionStatus, OutboxStatus
+from app.daily.public.media_sync import upsert_post_media_from_payload
 from app.daily.redis_cursors import WorkingCursor
 from app.daily.scan import AccountScanResult
 from app.x_watchlist.cleaner import parse_iso_datetime
@@ -48,25 +49,26 @@ def persist_account_collection(
         )
         published = _parse_dt(post.published_at) or datetime.now(timezone.utc)
         if is_new:
-            session.add(
-                Post(
-                    post_id=post.post_id,
-                    handle=post.handle,
-                    watchlist_handle=post.watchlist_handle or handle_key,
-                    organization=post.organization or None,
-                    source_type=post.source_type,
-                    published_at=published,
-                    text=post.text,
-                    url=post.url,
-                    post_type=post.post_type,
-                    is_pinned=post.is_pinned,
-                    cursor_eligible=eligible,
-                    timeline_entry_id=None,
-                    payload=post.model_dump(mode="json"),
-                    first_ingest_run_id=run_id,
-                    summary_status="pending",
-                )
+            row = Post(
+                post_id=post.post_id,
+                handle=post.handle,
+                watchlist_handle=post.watchlist_handle or handle_key,
+                organization=post.organization or None,
+                source_type=post.source_type,
+                published_at=published,
+                text=post.text,
+                url=post.url,
+                post_type=post.post_type,
+                is_pinned=post.is_pinned,
+                cursor_eligible=eligible,
+                timeline_entry_id=None,
+                payload=post.model_dump(mode="json"),
+                first_ingest_run_id=run_id,
+                summary_status="pending",
             )
+            session.add(row)
+            session.flush()
+            upsert_post_media_from_payload(session, row)
             new_global += 1
         else:
             # Refresh mutable display fields; never rewrite first_ingest_run_id.
@@ -74,6 +76,7 @@ def persist_account_collection(
             existing.text = post.text
             existing.payload = post.model_dump(mode="json")
             existing.cursor_eligible = eligible
+            upsert_post_media_from_payload(session, existing)
 
         prior_link = session.execute(
             select(RunPost).where(RunPost.run_id == run_id, RunPost.post_id == post.post_id)

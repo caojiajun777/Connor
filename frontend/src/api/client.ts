@@ -1,9 +1,22 @@
 const BASE = ''
 
+const OPS_KEY =
+  (typeof import.meta !== 'undefined' &&
+    (import.meta as ImportMeta & { env?: Record<string, string> }).env
+      ?.VITE_CONNOR_OPS_API_KEY) ||
+  ''
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(init?.headers as Record<string, string> | undefined),
+  }
+  if (OPS_KEY) {
+    headers['X-Connor-Ops-Key'] = OPS_KEY
+  }
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
     ...init,
+    headers,
   })
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}))
@@ -41,4 +54,12 @@ export const api = {
   cancel: (id: string) =>
     request<any>(`/api/console/annotations/${id}/cancel`, { method: 'POST' }),
   diff: (id: string) => request<any>(`/api/console/annotations/${id}/diff`),
+  watchlist: () => request<any>('/api/console/watchlist'),
+  watchlistAudits: () => request<any[]>('/api/console/watchlist/audits?limit=30'),
+  watchlistAudit: (id: string) => request<any>(`/api/console/watchlist/audits/${id}`),
+  startWatchlistAudit: (body: Record<string, unknown>) =>
+    request<any>('/api/console/watchlist/audits', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 }

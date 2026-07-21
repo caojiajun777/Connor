@@ -78,7 +78,7 @@ class XNewsMCPClient:
                 "X_AGENT_TIMEOUT_MS": self.settings.timeout_ms,
                 # Keep serial page ops by default; browser process is still reused.
                 "X_AGENT_MAX_CONCURRENT_PAGES": os.environ.get(
-                    "X_AGENT_MAX_CONCURRENT_PAGES", "1"
+                    "X_AGENT_MAX_CONCURRENT_PAGES", "2"
                 ),
             },
         )

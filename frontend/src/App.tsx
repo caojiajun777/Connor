@@ -7,6 +7,8 @@ import { EditorialInboxPage } from './pages/EditorialInboxPage'
 import { OverviewPage } from './pages/OverviewPage'
 import { RunDetailPage } from './pages/RunDetailPage'
 import { RunsPage } from './pages/RunsPage'
+import { WatchlistAuditPage } from './pages/WatchlistAuditPage'
+import { WatchlistPage } from './pages/WatchlistPage'
 import './index.css'
 
 const qc = new QueryClient()
@@ -24,6 +26,8 @@ export default function App() {
             <Route path="editorial" element={<EditorialInboxPage />} />
             <Route path="editorial/:annotationRunId" element={<AnnotationWorkspacePage />} />
             <Route path="editorial/:annotationRunId/diff" element={<AnnotationDiffPage />} />
+            <Route path="watchlist" element={<WatchlistPage />} />
+            <Route path="watchlist/audits/:runId" element={<WatchlistAuditPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

@@ -29,7 +29,7 @@ def sample_account() -> XSourceAccount:
 def employee_account() -> XSourceAccount:
     return XSourceAccount(
         handle="thsottiaux",
-        display_name="Thomas Ottiaux",
+        display_name="Thibault Sottiaux",
         organization="OpenAI",
         source_type="employee",
         priority="P0",
@@ -96,6 +96,14 @@ def watchlist_yaml(tmp_path: Path) -> Path:
                 "include_reposts": True,
                 "max_posts_per_run": 10,
                 "priority": "P0",
+            },
+            "analyst": {
+                "include_originals": True,
+                "include_quotes": True,
+                "include_replies": True,
+                "include_reposts": True,
+                "max_posts_per_run": 10,
+                "priority": "P1",
             },
             "leak": {
                 "include_originals": True,

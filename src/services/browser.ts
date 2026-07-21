@@ -19,11 +19,12 @@ const UNIX_CANDIDATES = [
 
 /**
  * Cap concurrent pages on the single shared profile.
- * Default 1 (serial). Max 2 — higher values raise X rate-limit risk.
+ * Default 2 (mild parallelism). Max 2 — higher values raise X rate-limit risk.
+ * Set X_AGENT_MAX_CONCURRENT_PAGES=1 to force serial.
  */
 function maxConcurrentPages(): number {
-  const raw = Number(process.env.X_AGENT_MAX_CONCURRENT_PAGES ?? "1");
-  if (!Number.isFinite(raw)) return 1;
+  const raw = Number(process.env.X_AGENT_MAX_CONCURRENT_PAGES ?? "2");
+  if (!Number.isFinite(raw)) return 2;
   return Math.max(1, Math.min(2, Math.floor(raw)));
 }
 
@@ -116,7 +117,7 @@ export async function closeSharedBrowser(): Promise<void> {
 /**
  * Run work on a page from the shared persistent profile.
  * One Chrome process is reused for the whole MCP lifetime (collect speedup).
- * Page ops stay gated (default serial) so we do not multiply X sessions.
+ * Page ops stay gated (default up to 2) so we do not multiply X sessions.
  */
 export async function withAuthenticatedPage<T>(
   operation: (page: Page) => Promise<T>

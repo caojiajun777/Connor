@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 900" fill="none">
+  <defs>
+    <radialGradient id="iris" cx="45%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#9fd2ff"/>
+      <stop offset="55%" stop-color="#2f9bff"/>
+      <stop offset="100%" stop-color="#0c3a66"/>
+    </radialGradient>
+  </defs>
+  <!-- Left eye socket -->
+  <ellipse cx="335" cy="390" rx="38" ry="22" fill="#f4f8fb"/>
+  <ellipse cx="335" cy="390" rx="38" ry="22" stroke="#7f93a3" stroke-opacity="0.5" stroke-width="1"/>
+  <circle cx="335" cy="390" r="14" fill="url(#iris)"/>
+  <circle cx="335" cy="390" r="5" fill="#0b1117"/>
+  <circle cx="330" cy="385" r="2.5" fill="#ffffff" fill-opacity="0.85"/>
+  <!-- Right eye socket -->
+  <ellipse cx="465" cy="390" rx="38" ry="22" fill="#f4f8fb"/>
+  <ellipse cx="465" cy="390" rx="38" ry="22" stroke="#7f93a3" stroke-opacity="0.5" stroke-width="1"/>
+  <circle cx="465" cy="390" r="14" fill="url(#iris)"/>
+  <circle cx="465" cy="390" r="5" fill="#0b1117"/>
+  <circle cx="460" cy="385" r="2.5" fill="#ffffff" fill-opacity="0.85"/>
+  <!-- Brow ridges -->
+  <path d="M290 355 C315 340 355 338 375 350" stroke="#6d7e8c" stroke-width="2" stroke-linecap="round"/>
+  <path d="M425 350 C445 338 485 340 510 355" stroke="#6d7e8c" stroke-width="2" stroke-linecap="round"/>
+</svg>

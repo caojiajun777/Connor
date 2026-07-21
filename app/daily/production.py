@@ -15,6 +15,7 @@ from app.daily.checkpoint import (
     setup_checkpointer,
 )
 from app.daily.collect_loop import run_collect_accounts_loop
+from app.daily.collect_order import apply_collect_deferrals, sort_accounts_for_collect
 from app.daily.config import DailySettings
 from app.daily.db import create_db_engine, create_session_factory, init_schema
 from app.daily.db.lock import DailyRunLock
@@ -445,7 +446,11 @@ class DailyProductionRuntime:
     ) -> dict[str, Any]:
         """MCP incremental collect for all enabled watchlist accounts."""
         config = load_watchlist(Path(self.settings.watchlist_path))
-        accounts = filter_accounts(config, handles=None, enabled_only=True)
+        accounts = sort_accounts_for_collect(
+            apply_collect_deferrals(
+                filter_accounts(config, handles=None, enabled_only=True)
+            )
+        )
 
         cursor_store: RedisCursorStore | None = None
         sync_redis = True

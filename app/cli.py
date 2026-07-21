@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -25,6 +26,10 @@ def _default_output_dir() -> Path:
 
 def _default_cursor_path() -> Path:
     return Path(__file__).resolve().parents[1] / "data" / "x_watchlist_cursors.json"
+
+
+def _default_audit_output() -> Path:
+    return Path(__file__).resolve().parents[1] / "artifacts" / "watchlist_audit"
 
 
 def _default_editorial_input() -> Path:
@@ -84,35 +89,61 @@ def _build_collect_parser(subparsers: argparse._SubParsersAction[argparse.Argume
     )
 
 
-def _build_editorial_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def _build_audit_accounts_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
     parser = subparsers.add_parser(
-        "run",
-        help="Run single-call frontier pick ranking over clean_posts.json",
+        "audit-accounts",
+        help="Audit watchlist account metadata (report-only; never writes YAML)",
     )
     parser.add_argument(
-        "--input",
-        default=str(_default_editorial_input()),
-        help="Path to x-clean-posts/v1 JSON (default: fixtures/m1_golden_run/clean_posts.json)",
+        "--watchlist",
+        default=str(_default_watchlist_path()),
+        help="Path to x_watchlist.yaml",
     )
     parser.add_argument(
         "--output",
-        default=str(_default_editorial_output()),
-        help="Output directory for editorial runs",
+        default=str(_default_audit_output()),
+        help="Output root for audit artifacts (default: artifacts/watchlist_audit)",
+    )
+    sel = parser.add_mutually_exclusive_group(required=True)
+    sel.add_argument("--all", action="store_true", help="Audit every enabled account")
+    sel.add_argument("--handles", help="Comma-separated handles to audit")
+    sel.add_argument(
+        "--stale",
+        action="store_true",
+        help="Only accounts past per-type verified_at cadence (employee 90d, etc.)",
+    )
+    sel.add_argument(
+        "--stale-days",
+        type=int,
+        metavar="N",
+        help="Only accounts with missing/expired verified_at older than N days (uniform)",
     )
     parser.add_argument(
-        "--prompt-version",
-        default="v2",
-        help="Prompt version under app/editorial/prompts/ (default: v2 ranking; v1 is historical)",
+        "--web-search",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Collect web evidence (default: true; --no-web-search to skip)",
+    )
+    parser.add_argument(
+        "--max-concurrency",
+        type=int,
+        default=5,
+        help="Parallel account audits (default: 5)",
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Use deterministic mock ranker (no LLM API call)",
+        help="Mock judge + synthetic evidence (no web/LLM)",
     )
 
 
 def _cmd_x_watchlist(args: argparse.Namespace) -> int:
-    if args.collect_command != "collect":
+    command = getattr(args, "watchlist_command", None)
+    if command == "audit-accounts":
+        return _cmd_x_watchlist_audit_accounts(args)
+    if command != "collect":
         print("Unknown x-watchlist command", file=sys.stderr)
         return 2
 
@@ -157,6 +188,93 @@ def _cmd_x_watchlist(args: argparse.Namespace) -> int:
     print(f"Output: {result.output_dir}")
     print(f"Coverage: {result.coverage_path}")
     return 0 if result.status in {"success", "partial", "dry_run"} else 1
+
+
+def _cmd_x_watchlist_audit_accounts(args: argparse.Namespace) -> int:
+    from app.editorial.llm_client import LLMClientError, LLMSettings, OpenAICompatibleClient
+    from app.x_watchlist.audit_runner import AuditOptions, run_account_audit
+
+    handles = None
+    if args.handles:
+        handles = [part.strip() for part in args.handles.split(",") if part.strip()]
+
+    llm = None
+    if not args.dry_run:
+        try:
+            base = LLMSettings.from_env()
+            thinking_raw = os.environ.get("CONNOR_AUDIT_THINKING", "disabled").strip().lower()
+            settings = LLMSettings(
+                api_key=base.api_key,
+                base_url=base.base_url,
+                model=os.environ.get("CONNOR_AUDIT_MODEL", base.model),
+                timeout_sec=float(os.environ.get("CONNOR_AUDIT_TIMEOUT_SEC", "120")),
+                max_tokens=int(os.environ.get("CONNOR_AUDIT_MAX_TOKENS", "4096")),
+                reasoning_effort=os.environ.get("CONNOR_AUDIT_REASONING_EFFORT", "medium"),
+                thinking_enabled=thinking_raw not in {"disabled", "0", "false", "off"},
+            )
+            llm = OpenAICompatibleClient(settings)
+        except LLMClientError as exc:
+            print(f"LLM unavailable: {exc}", file=sys.stderr)
+            return 2
+
+    stale_days = args.stale_days
+    if getattr(args, "stale", False):
+        stale_days = -1  # sentinel: per-type cadence
+
+    options = AuditOptions(
+        watchlist_path=Path(args.watchlist),
+        output_dir=Path(args.output),
+        handles=handles,
+        all_accounts=bool(args.all),
+        stale_days=stale_days,
+        web_search=bool(args.web_search),
+        max_concurrency=max(1, int(args.max_concurrency)),
+        dry_run=bool(args.dry_run),
+    )
+    try:
+        result = run_account_audit(options, llm=llm)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    except Exception as exc:  # noqa: BLE001
+        print(f"Audit failed: {exc}", file=sys.stderr)
+        return 1
+
+    by_status: dict[str, int] = {}
+    for row in result.results:
+        by_status[row.status] = by_status.get(row.status, 0) + 1
+    print(f"Audit {result.run_id} finished")
+    print(f"Accounts: {len(result.results)} | {by_status}")
+    print(f"Output: {result.output_dir}")
+    print("Review audit.md / suggested_patch.yaml — do not auto-apply.")
+    return 0
+
+
+def _build_editorial_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    parser = subparsers.add_parser(
+        "run",
+        help="Run single-call frontier pick ranking over clean_posts.json",
+    )
+    parser.add_argument(
+        "--input",
+        default=str(_default_editorial_input()),
+        help="Path to x-clean-posts/v1 JSON (default: fixtures/m1_golden_run/clean_posts.json)",
+    )
+    parser.add_argument(
+        "--output",
+        default=str(_default_editorial_output()),
+        help="Output directory for editorial runs",
+    )
+    parser.add_argument(
+        "--prompt-version",
+        default="v2",
+        help="Prompt version under app/editorial/prompts/ (default: v2 ranking; v1 is historical)",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Use deterministic mock ranker (no LLM API call)",
+    )
 
 
 def _cmd_editorial(args: argparse.Namespace) -> int:
@@ -238,10 +356,70 @@ def _build_daily_parser(subparsers: argparse._SubParsersAction[argparse.Argument
     tick.add_argument("--force", action="store_true", help="Ignore schedule window")
     tick.set_defaults(daily_command="tick")
 
+    publish_today = subparsers.add_parser(
+        "publish-today",
+        help="Full live pipeline for Asia/Shanghai today: collect→select→write→publish",
+    )
+    publish_today.add_argument(
+        "--force",
+        action="store_true",
+        help="Do not skip when today's report is already published",
+    )
+    publish_today.add_argument("--dry-run", action="store_true")
+    publish_today.add_argument("--accept-gap", action="store_true")
+    publish_today.add_argument("--skip-deps", action="store_true")
+    publish_today.set_defaults(daily_command="publish-today")
+
     api = subparsers.add_parser("serve-api", help="Serve Daily + Console FastAPI (runs/annotations)")
     api.add_argument("--host", default="127.0.0.1")
     api.add_argument("--port", type=int, default=8080)
     api.set_defaults(daily_command="serve-api")
+
+    draft = subparsers.add_parser(
+        "create-report-draft",
+        help="Create unpublished daily report shell (manual title/overview; prefer write-report)",
+    )
+    draft.add_argument("--run-id", required=True)
+    draft.add_argument("--date", required=True, help="YYYY-MM-DD")
+    draft.add_argument("--title", required=True)
+    draft.add_argument("--overview", required=True)
+    draft.add_argument("--keywords", default="", help="Comma-separated keywords")
+    draft.set_defaults(daily_command="create-report-draft")
+
+    write_cmd = subparsers.add_parser(
+        "write-report",
+        help="Package selected posts into events, run Writer, create unpublished draft",
+    )
+    write_cmd.add_argument("--run-id", required=True)
+    write_cmd.add_argument("--date", required=True, help="YYYY-MM-DD")
+    write_cmd.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Use mock packager/writer (no LLM)",
+    )
+    write_cmd.add_argument(
+        "--report-id",
+        default="",
+        help="Rewrite an existing unpublished draft instead of creating a new one",
+    )
+    write_cmd.set_defaults(daily_command="write-report")
+
+    publish_cmd = subparsers.add_parser(
+        "publish-report",
+        help="Download media (selected posts) and publish a daily report",
+    )
+    publish_cmd.add_argument("--report-id", required=True)
+    publish_cmd.add_argument(
+        "--accept-partial-media",
+        action="store_true",
+        help="Allow publish when some images failed",
+    )
+    publish_cmd.add_argument("--no-download", action="store_true")
+    publish_cmd.set_defaults(daily_command="publish-report")
+
+    withdraw_cmd = subparsers.add_parser("withdraw-report", help="Withdraw a published daily report")
+    withdraw_cmd.add_argument("--report-id", required=True)
+    withdraw_cmd.set_defaults(daily_command="withdraw-report")
 
 
 def _cmd_daily(args: argparse.Namespace) -> int:
@@ -327,10 +505,156 @@ def _cmd_daily(args: argparse.Namespace) -> int:
         print(result)
         return 0 if result.get("ok") else 1
 
+    if command == "publish-today":
+        from app.daily.daily_publish import run_daily_and_publish
+
+        result = run_daily_and_publish(
+            force=bool(args.force),
+            accept_gap=bool(args.accept_gap),
+            dry_run=bool(args.dry_run),
+            skip_deps=bool(args.skip_deps),
+        )
+        print(result.to_dict())
+        return 0 if result.ok else 1
+
     if command == "serve-api":
         from app.daily.api import run_api
 
         run_api(host=args.host, port=int(args.port))
+        return 0
+
+    if command == "create-report-draft":
+        from app.daily.config import DailySettings
+        from app.daily.db import create_db_engine, create_session_factory, init_schema
+        from app.daily.public import publish as pub
+
+        settings = DailySettings.from_env()
+        engine = create_db_engine(settings.database_url)
+        init_schema(engine)
+        factory = create_session_factory(engine)
+        keywords = [k.strip() for k in str(args.keywords).split(",") if k.strip()]
+        with factory() as session:
+            try:
+                report = pub.create_draft_from_selection(
+                    session,
+                    source_run_id=args.run_id,
+                    report_date=args.date,
+                    title=args.title,
+                    overview=args.overview,
+                    keywords=keywords,
+                )
+                session.commit()
+            except pub.PublishError as tip:
+                session.rollback()
+                print(f"create-report-draft failed: {tip.message}", file=sys.stderr)
+                return 1
+            print(pub.report_to_ops_dict(report))
+        return 0
+
+    if command == "write-report":
+        from app.daily.config import DailySettings
+        from app.daily.db import create_db_engine, create_session_factory, init_schema
+        from app.daily.public import publish as pub
+        from app.daily.report_writing import (
+            apply_writer_to_existing_draft,
+            write_report_from_selection,
+        )
+
+        settings = DailySettings.from_env()
+        engine = create_db_engine(settings.database_url)
+        init_schema(engine)
+        factory = create_session_factory(engine)
+        llm = None
+        dry_run = bool(args.dry_run)
+        if not dry_run:
+            try:
+                from app.editorial.llm_client import LLMSettings, OpenAICompatibleClient
+
+                llm = OpenAICompatibleClient(LLMSettings.from_env())
+            except Exception as exc:  # noqa: BLE001
+                print(f"write-report LLM unavailable ({exc}); use --dry-run", file=sys.stderr)
+                return 1
+
+        with factory() as session:
+            try:
+                if str(args.report_id or "").strip():
+                    result = apply_writer_to_existing_draft(
+                        session,
+                        str(args.report_id).strip(),
+                        llm=llm,
+                        dry_run=dry_run,
+                    )
+                else:
+                    result = write_report_from_selection(
+                        session,
+                        source_run_id=args.run_id,
+                        report_date=args.date,
+                        llm=llm,
+                        dry_run=dry_run,
+                    )
+                session.commit()
+            except (pub.PublishError, ValueError) as tip:
+                session.rollback()
+                message = tip.message if isinstance(tip, pub.PublishError) else str(tip)
+                print(f"write-report failed: {message}", file=sys.stderr)
+                return 1
+            print(
+                {
+                    "report_id": result.report_id,
+                    "report_date": result.report_date,
+                    "title": result.title,
+                    "lead": result.lead,
+                    "event_count": result.event_count,
+                    "section_count": result.section_count,
+                    "post_count": len(result.post_ids),
+                    "dry_run": result.dry_run,
+                }
+            )
+        return 0
+
+    if command == "publish-report":
+        from app.daily.config import DailySettings
+        from app.daily.db import create_db_engine, create_session_factory, init_schema
+        from app.daily.public import publish as pub
+
+        settings = DailySettings.from_env()
+        engine = create_db_engine(settings.database_url)
+        init_schema(engine)
+        factory = create_session_factory(engine)
+        with factory() as session:
+            try:
+                report = pub.publish_report(
+                    session,
+                    args.report_id,
+                    accept_partial_media=bool(args.accept_partial_media),
+                    download_media=not bool(args.no_download),
+                )
+                session.commit()
+            except pub.PublishError as tip:
+                session.rollback()
+                print(f"publish-report failed: {tip.message}", file=sys.stderr)
+                return 1
+            print(pub.report_to_ops_dict(report))
+        return 0
+
+    if command == "withdraw-report":
+        from app.daily.config import DailySettings
+        from app.daily.db import create_db_engine, create_session_factory, init_schema
+        from app.daily.public import publish as pub
+
+        settings = DailySettings.from_env()
+        engine = create_db_engine(settings.database_url)
+        init_schema(engine)
+        factory = create_session_factory(engine)
+        with factory() as session:
+            try:
+                report = pub.withdraw_report(session, args.report_id)
+                session.commit()
+            except pub.PublishError as tip:
+                session.rollback()
+                print(f"withdraw-report failed: {tip.message}", file=sys.stderr)
+                return 1
+            print(pub.report_to_ops_dict(report))
         return 0
 
     print("Unknown daily command", file=sys.stderr)
@@ -342,8 +666,9 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     watchlist_parser = subparsers.add_parser("x-watchlist", help="X watchlist operations")
-    watchlist_sub = watchlist_parser.add_subparsers(dest="collect_command", required=True)
+    watchlist_sub = watchlist_parser.add_subparsers(dest="watchlist_command", required=True)
     _build_collect_parser(watchlist_sub)
+    _build_audit_accounts_parser(watchlist_sub)
     watchlist_parser.set_defaults(func=_cmd_x_watchlist)
 
     editorial_parser = subparsers.add_parser("editorial", help="Editorial LLM operations")

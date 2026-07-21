@@ -143,17 +143,19 @@ def create_annotation_run(
             )
         ).all()
     }
-    if len(evaluations) < len(candidates):
-        missing = [c.post_id for c in candidates if c.post_id not in evaluations]
+    # Accept-partial runs may leave media-only / failed-summary candidates without
+    # evaluations. Annotate the evaluable subset instead of blocking the whole run.
+    annotatable = [c for c in candidates if c.post_id in evaluations]
+    if not annotatable:
         raise AnnotationError(
             "evaluations_incomplete",
-            f"missing successful evaluations for {len(missing)} candidates",
+            "no candidates have successful evaluations to annotate",
         )
 
     posts = {
         p.post_id: p
         for p in session.scalars(
-            select(Post).where(Post.post_id.in_([c.post_id for c in candidates]))
+            select(Post).where(Post.post_id.in_([c.post_id for c in annotatable]))
         ).all()
     }
 
@@ -188,13 +190,13 @@ def create_annotation_run(
         annotation_policy_version=annotation_policy_version,
         status=AnnotationRunStatus.PENDING.value,
         annotator=annotator,
-        total_items=len(candidates),
+        total_items=len(annotatable),
         reviewed_items=0,
     )
     session.add(annotation)
     session.flush()
 
-    for cand in candidates:
+    for cand in annotatable:
         ev = evaluations[cand.post_id]
         summary = session.get(PostSummary, ev.summary_id)
         if summary is None or summary.status != TaskStatus.SUCCESS.value:

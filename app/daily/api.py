@@ -1,15 +1,44 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import desc, select
 
+from app.daily.auth import require_ops_access
 from app.daily.config import DailySettings
 from app.daily.console import create_console_router
 from app.daily.db import create_db_engine, create_session_factory, init_schema
 from app.daily.db.models import AccountRun, PostEvaluation, Run, SelectionItem, SelectionRun
+from app.daily.public.api import create_media_router, create_public_router
+
+
+def _cors_origins() -> list[str]:
+    defaults = [
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+        "http://127.0.0.1:4173",
+        "http://localhost:4173",
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+    ]
+    extra = os.environ.get("CONNOR_CORS_ORIGINS", "").strip()
+    site = os.environ.get("CONNOR_PUBLIC_SITE_URL", "").strip().rstrip("/")
+    origins = list(defaults)
+    if extra:
+        origins.extend(o.strip() for o in extra.split(",") if o.strip())
+    if site and site not in origins:
+        origins.append(site)
+    # De-dupe, preserve order
+    seen: set[str] = set()
+    out: list[str] = []
+    for o in origins:
+        if o not in seen:
+            seen.add(o)
+            out.append(o)
+    return out
 
 
 def create_app(
@@ -17,7 +46,7 @@ def create_app(
     *,
     skip_schema_init: bool = False,
 ) -> FastAPI:
-    """HTTP API: legacy readonly routes + Connor Console `/api/console/*`."""
+    """HTTP API: public site + Console + legacy readonly routes."""
     settings = settings or DailySettings.from_env()
     engine = create_db_engine(settings.database_url)
     if not skip_schema_init:
@@ -31,23 +60,20 @@ def create_app(
     app = FastAPI(title="Connor Daily API", version="1.0.0")
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "http://127.0.0.1:5173",
-            "http://localhost:5173",
-            "http://127.0.0.1:4173",
-            "http://localhost:4173",
-        ],
+        allow_origins=_cors_origins(),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
     app.include_router(create_console_router(factory))
+    app.include_router(create_public_router(factory))
+    app.include_router(create_media_router())
 
     @app.get("/health")
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    @app.get("/runs")
+    @app.get("/runs", dependencies=[Depends(require_ops_access)])
     def list_runs(limit: int = 20) -> list[dict[str, Any]]:
         limit = max(1, min(limit, 100))
         with factory() as session:
@@ -68,7 +94,7 @@ def create_app(
                 for r in rows
             ]
 
-    @app.get("/runs/{run_id}")
+    @app.get("/runs/{run_id}", dependencies=[Depends(require_ops_access)])
     def get_run(run_id: str) -> dict[str, Any]:
         with factory() as session:
             run = session.get(Run, run_id)
@@ -97,7 +123,7 @@ def create_app(
                 },
             }
 
-    @app.get("/runs/{run_id}/selection")
+    @app.get("/runs/{run_id}/selection", dependencies=[Depends(require_ops_access)])
     def get_selection(run_id: str) -> dict[str, Any]:
         with factory() as session:
             sel = session.execute(
@@ -130,7 +156,7 @@ def create_app(
                 ],
             }
 
-    @app.get("/runs/{run_id}/evaluations")
+    @app.get("/runs/{run_id}/evaluations", dependencies=[Depends(require_ops_access)])
     def get_evaluations(run_id: str, limit: int = 100) -> dict[str, Any]:
         limit = max(1, min(limit, 500))
         with factory() as session:

@@ -134,10 +134,16 @@ class Post(Base):
         ForeignKey("runs.id", ondelete="RESTRICT"), nullable=False
     )
     summary_status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
+    # Public site: hide content without deleting internal records.
+    visibility_status: Mapped[str] = mapped_column(String(32), nullable=False, default="visible")
+    author_avatar_source_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    author_avatar_storage_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+    media_items: Mapped[list["PostMedia"]] = relationship(back_populates="post")
 
 
 class RunPost(Base):
@@ -306,3 +312,96 @@ class AnnotationItem(Base):
     )
 
     annotation_run: Mapped[AnnotationRun] = relationship(back_populates="items")
+
+
+class PostMedia(Base):
+    """Durable media assets for posts (metadata at ingest; bytes after selection)."""
+
+    __tablename__ = "post_media"
+    __table_args__ = (
+        UniqueConstraint("post_id", "position", name="uq_post_media_post_position"),
+        Index("ix_post_media_download_status", "download_status"),
+    )
+
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=_uuid)
+    post_id: Mapped[str] = mapped_column(ForeignKey("posts.post_id", ondelete="CASCADE"), nullable=False)
+    media_type: Mapped[str] = mapped_column(String(32), nullable=False, default="image")
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    source_url: Mapped[str] = mapped_column(Text, nullable=False)
+    storage_key: Mapped[str | None] = mapped_column(Text, nullable=True)
+    storage_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    thumbnail_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    width: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    height: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    alt_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    mime_type: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    file_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    download_status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
+    download_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    downloaded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    visibility_status: Mapped[str] = mapped_column(String(32), nullable=False, default="visible")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    post: Mapped[Post] = relationship(back_populates="media_items")
+
+
+class DailyReport(Base):
+    """Published daily briefing for the public site (selection ≠ publication)."""
+
+    __tablename__ = "daily_reports"
+    __table_args__ = (UniqueConstraint("report_date", name="uq_daily_reports_report_date"),)
+
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=_uuid)
+    report_date: Mapped[str] = mapped_column(String(10), nullable=False)  # YYYY-MM-DD
+    title: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    # Writer 导语（公开站 header）；不再把 post_summaries 翻译当日报正文。
+    overview: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    keywords: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    # Intermediate event packages (facts + source_post_ids) produced by packager.
+    event_packages: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    # Writer layered body: [{heading, paragraphs, event_ids, citation_post_ids}]
+    body_sections: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
+    writer_meta: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    publication_status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="unpublished"
+    )
+    source_run_id: Mapped[str | None] = mapped_column(
+        ForeignKey("runs.id", ondelete="SET NULL"), nullable=True
+    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    items: Mapped[list["DailyReportItem"]] = relationship(
+        back_populates="daily_report", order_by="DailyReportItem.display_order"
+    )
+
+
+class DailyReportItem(Base):
+    """Ordered link from a daily report to a durable post (no text duplication)."""
+
+    __tablename__ = "daily_report_items"
+    __table_args__ = (
+        UniqueConstraint("daily_report_id", "post_id", name="uq_daily_report_items_report_post"),
+        UniqueConstraint(
+            "daily_report_id", "display_order", name="uq_daily_report_items_report_order"
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=_uuid)
+    daily_report_id: Mapped[str] = mapped_column(
+        ForeignKey("daily_reports.id", ondelete="CASCADE"), nullable=False
+    )
+    post_id: Mapped[str] = mapped_column(ForeignKey("posts.post_id", ondelete="CASCADE"), nullable=False)
+    display_order: Mapped[int] = mapped_column(Integer, nullable=False)
+    section: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    category: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    daily_report: Mapped[DailyReport] = relationship(back_populates="items")

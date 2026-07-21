@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 class ScheduleConfig:
     """Cron-friendly daily window. Designed for external cron calling `daily tick`."""
 
-    hour: int = 8
+    hour: int = 6
     minute: int = 0
     timezone: str = "Asia/Shanghai"
     enabled: bool = True
@@ -18,7 +18,7 @@ class ScheduleConfig:
     @classmethod
     def from_env(cls) -> ScheduleConfig:
         return cls(
-            hour=int(os.environ.get("CONNOR_SCHEDULE_HOUR", "8")),
+            hour=int(os.environ.get("CONNOR_SCHEDULE_HOUR", "6")),
             minute=int(os.environ.get("CONNOR_SCHEDULE_MINUTE", "0")),
             timezone=os.environ.get("CONNOR_SCHEDULE_TZ", "Asia/Shanghai"),
             enabled=os.environ.get("CONNOR_SCHEDULE_ENABLED", "1").strip().lower()

@@ -1,0 +1,165 @@
+{
+  "report_date": "2026-07-17",
+  "title": "AI 早报 2026-07-17",
+  "overview": "Kimi K3 正式亮相，开源推理与评测栈继续加压，产品侧把 Agent 执行做成可对照指标。",
+  "lead": "Kimi K3 正式亮相，开源推理与评测栈继续加压，产品侧把 Agent 执行做成可对照指标。",
+  "keywords": ["Kimi K3", "Agent", "Inference", "开源"],
+  "format": "digest_v1",
+  "body_sections": [],
+  "digest": {
+    "format": "digest_v1",
+    "toc": [
+      {
+        "category": "模型发布",
+        "entries": [
+          {
+            "rank": 1,
+            "headline": "月之暗面正式发布 2.8 万亿参数模型 Kimi K3，权重将于 7 月 27 日前开源"
+          }
+        ]
+      },
+      {
+        "category": "开发生态",
+        "entries": [
+          {
+            "rank": 2,
+            "headline": "长程 Agent 评测公开 harness 与记分卡，对照标准前移"
+          },
+          {
+            "rank": 3,
+            "headline": "vLLM 更新 continuous batching 与 speculative decoding，压低尾延迟"
+          }
+        ]
+      }
+    ],
+    "items": [
+      {
+        "rank": 1,
+        "category": "模型发布",
+        "headline": "月之暗面正式发布 2.8 万亿参数模型 Kimi K3，权重将于 7 月 27 日前开源",
+        "blurb": "Kimi 宣布 K3：2.8T 总参数、600B 激活，并给出开源时间表。",
+        "body": "月之暗面正式介绍 Kimi K3。官方口径给出约 2.8 万亿总参数、约 6000 亿激活参数，并称权重计划在 7 月 27 日前开源。发布帖同步给出评测与产品入口，把开源时间线与对外可用性绑在一起。",
+        "links": ["https://x.com/Kimi_Moonshot/status/example"],
+        "event_id": "evt_1",
+        "citation_post_ids": ["example1"],
+        "images": [
+          {
+            "type": "image",
+            "url": "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1600&q=80",
+            "width": 1600,
+            "height": 900,
+            "alt_text": "Abstract visualization of a large language model launch",
+            "position": 0
+          }
+        ]
+      },
+      {
+        "rank": 2,
+        "category": "开发生态",
+        "headline": "长程 Agent 评测公开 harness 与记分卡，对照标准前移",
+        "blurb": "评测重点从单轮问答转向规划、工具使用与失败恢复。",
+        "body": "新的长程 Agent 评测套件强调规划、工具调用与局部失败后的恢复，并同步公开 harness、基线提示词与记分卡。这意味着团队可以在同一条件下比较不同系统，也把“能不能做任务”推进为可核对的工程指标。",
+        "links": ["https://x.com/OpenAI/status/example1"],
+        "event_id": "evt_2",
+        "citation_post_ids": ["example2"],
+        "images": [
+          {
+            "type": "image",
+            "url": "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&q=80",
+            "width": 1200,
+            "height": 800,
+            "alt_text": "Code and charts on a monitor",
+            "position": 0
+          }
+        ]
+      },
+      {
+        "rank": 3,
+        "category": "开发生态",
+        "headline": "vLLM 更新 continuous batching 与 speculative decoding，压低尾延迟",
+        "blurb": "服务侧继续优化突发流量下的排队与 decode 时间。",
+        "body": "vLLM 更新面向长上下文服务的 continuous batching 与 speculative decoding，目标是降低突发流量下的尾延迟，并改善多租户 KV cache 装箱。对持续调用工具的 Agent 来说，排队与 decode 时间指标和裸吞吐同样关键。",
+        "links": ["https://x.com/vllm_project/status/example2"],
+        "event_id": "evt_3",
+        "citation_post_ids": ["example3"],
+        "images": []
+      }
+    ]
+  },
+  "item_count": 3,
+  "source_post_count": 3,
+  "published_at": "2026-07-17T12:00:00Z",
+  "previous_report_date": null,
+  "next_report_date": null,
+  "items": [
+    {
+      "display_order": 1,
+      "category": "模型发布",
+      "post": {
+        "author_name": "Kimi",
+        "author_handle": "Kimi_Moonshot",
+        "author_avatar_url": null,
+        "text_original": "Introducing Kimi K3 — 2.8T total / 600B activated. Weights open before July 27.",
+        "text_translated": "正式介绍 Kimi K3：总参数约 2.8T，激活约 600B；权重计划于 7 月 27 日前开源。",
+        "posted_at": "2026-07-16T18:25:00Z",
+        "original_url": "https://x.com/Kimi_Moonshot/status/example",
+        "post_type": "original",
+        "media": [
+          {
+            "type": "image",
+            "url": "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1600&q=80",
+            "width": 1600,
+            "height": 900,
+            "alt_text": "Abstract visualization of a large language model launch",
+            "position": 0
+          }
+        ],
+        "unavailable": false,
+        "unavailable_reason": null
+      }
+    },
+    {
+      "display_order": 2,
+      "category": "开发生态",
+      "post": {
+        "author_name": "OpenAI",
+        "author_handle": "OpenAI",
+        "author_avatar_url": null,
+        "text_original": "Introducing a new evaluation suite for long-horizon agent tasks.",
+        "text_translated": "我们推出面向长程智能体任务的新评估套件。",
+        "posted_at": "2026-07-15T09:30:00Z",
+        "original_url": "https://x.com/OpenAI/status/example1",
+        "post_type": "original",
+        "media": [
+          {
+            "type": "image",
+            "url": "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&q=80",
+            "width": 1200,
+            "height": 800,
+            "alt_text": "Code and charts on a monitor",
+            "position": 0
+          }
+        ],
+        "unavailable": false,
+        "unavailable_reason": null
+      }
+    },
+    {
+      "display_order": 3,
+      "category": "开发生态",
+      "post": {
+        "author_name": "vLLM",
+        "author_handle": "vllm_project",
+        "author_avatar_url": null,
+        "text_original": "vLLM update: continuous batching + speculative decoding improvements landed.",
+        "text_translated": "vLLM 更新：continuous batching 与 speculative decoding 改进已合入。",
+        "posted_at": "2026-07-15T08:10:00Z",
+        "original_url": "https://x.com/vllm_project/status/example2",
+        "post_type": "original",
+        "media": [],
+        "unavailable": false,
+        "unavailable_reason": null
+      }
+    }
+  ]
+}

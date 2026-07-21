@@ -62,6 +62,9 @@ class XSourceAccount(BaseModel):
     max_posts_per_run: int = 0
     enabled: bool = True
     notes: str | None = None
+    role: str | None = None
+    # ISO date (YYYY-MM-DD) or datetime; used by audit-accounts --stale-days.
+    verified_at: str | None = None
 
 
 class WatchlistConfig(BaseModel):
