@@ -10,6 +10,9 @@ from pydantic import ValidationError
 
 from app.daily.report_writing.schemas import DigestItemDraft, EventPackage, WriterResult
 
+_OFFICIALISH = frozenset({"official", "company", "org"})
+_LEAKISH = frozenset({"leak", "rumor"})
+
 
 class WriterLLM(Protocol):
     def complete_json(self, *, system_prompt: str, user_prompt: str) -> dict[str, Any]: ...
@@ -23,19 +26,89 @@ def load_writer_system_prompt(version: str = "v2") -> str:
     raise FileNotFoundError(f"missing writer prompt: {path}")
 
 
+def citation_sources_from_posts(posts: list[dict[str, Any]]) -> dict[str, dict[str, str]]:
+    """Map post_id → {source_type, author_handle} for writer attribution hints."""
+    out: dict[str, dict[str, str]] = {}
+    for post in posts:
+        pid = str(post.get("post_id") or "").strip()
+        if not pid:
+            continue
+        out[pid] = {
+            "source_type": str(post.get("source_type") or "").strip().lower(),
+            "author_handle": str(post.get("author_handle") or "").strip(),
+        }
+    return out
+
+
+def _attribution_for_event(
+    event: EventPackage,
+    citation_sources: dict[str, dict[str, str]] | None,
+) -> dict[str, str]:
+    """Wire-style voice hint so the model avoids「Lumina 声称」."""
+    if not citation_sources:
+        return {
+            "voice": "other",
+            "style": "事实陈述；爆料勿点名账号，用「爆料源称」；官方用「官方指出」",
+        }
+
+    ordered: list[str] = []
+    if event.primary_post_id:
+        ordered.append(str(event.primary_post_id))
+    for pid in event.citation_post_ids:
+        text = str(pid)
+        if text not in ordered:
+            ordered.append(text)
+
+    source_type = ""
+    for pid in ordered:
+        meta = citation_sources.get(pid)
+        if meta and meta.get("source_type"):
+            source_type = meta["source_type"]
+            break
+
+    if source_type in _OFFICIALISH:
+        return {
+            "voice": "official",
+            "style": "用「官方指出 / 官方宣布 / 官方表示」，不要写具体账号名，不要用「声称」",
+        }
+    if source_type in _LEAKISH:
+        return {
+            "voice": "leak",
+            "style": "用「爆料源称 / 据爆料源 / 爆料源指出」，禁止写 Lumina 等账号名 +「声称」",
+        }
+    if source_type == "employee":
+        return {
+            "voice": "employee",
+            "style": "用「相关人士称」或「爆料源称」，不要点名个人账号",
+        }
+    return {
+        "voice": "other",
+        "style": "可写评测机构/媒体名；不要用爆料账号名 +「声称」",
+    }
+
+
 def build_writer_user_prompt(
     events: list[EventPackage],
     *,
     report_date: str,
+    citation_sources: dict[str, dict[str, str]] | None = None,
 ) -> str:
+    packages: list[dict[str, Any]] = []
+    for event in events:
+        row = event.model_dump(mode="json")
+        row["attribution"] = _attribution_for_event(event, citation_sources)
+        packages.append(row)
+
     payload = {
         "report_date": report_date,
         "instruction": (
-            f'Title must be exactly "AI 早报 {report_date}". '
+            f'Title must be exactly "AI 日报 {report_date}". '
             "Write one digest item per event: headline, blurb, body, links. "
-            "Do not paste faithful translations as body."
+            "Do not paste faithful translations as body. "
+            "Attribution: leak→「爆料源称」; official→「官方指出」; "
+            "never write account names like Lumina +「声称」."
         ),
-        "event_packages": [e.model_dump(mode="json") for e in events],
+        "event_packages": packages,
     }
     return json.dumps(payload, ensure_ascii=False, indent=2)
 
@@ -46,11 +119,16 @@ def write_report_copy(
     *,
     report_date: str,
     prompt_version: str = "v2",
+    citation_sources: dict[str, dict[str, str]] | None = None,
 ) -> WriterResult:
     allowed_events = {e.event_id for e in events}
     raw = llm.complete_json(
         system_prompt=load_writer_system_prompt(prompt_version),
-        user_prompt=build_writer_user_prompt(events, report_date=report_date),
+        user_prompt=build_writer_user_prompt(
+            events,
+            report_date=report_date,
+            citation_sources=citation_sources,
+        ),
     )
     if "lead" not in raw and "overview" in raw:
         raw = {**raw, "lead": raw.get("overview")}
@@ -62,9 +140,11 @@ def write_report_copy(
     except ValidationError as tip:
         raise ValueError(f"invalid writer payload: {tip}") from tip
 
-    expected_title = f"AI 早报 {report_date}"
+    expected_title = f"AI 日报 {report_date}"
     title = result.title.strip() or expected_title
-    if not title.startswith("AI 早报"):
+    if title.startswith("AI 早报"):
+        title = "AI 日报" + title[len("AI 早报") :]
+    elif not title.startswith("AI 日报"):
         title = expected_title
 
     by_event = {item.event_id: item for item in result.items if item.event_id in allowed_events}
@@ -127,8 +207,8 @@ def mock_write_report_copy(
             )
         )
     return WriterResult(
-        title=f"AI 早报 {report_date}",
+        title=f"AI 日报 {report_date}",
         lead=f"今日共整理 {len(events)} 条 AI 相关要闻。" if events else "",
-        keywords=["AI", "早报"],
+        keywords=["AI", "日报"],
         items=items,
     )

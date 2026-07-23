@@ -1,0 +1,26 @@
+{
+  "name": "connor-short-video",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Connor daily vertical short-video Remotion templates",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts ConnorDailyShort",
+    "still": "remotion still src/index.ts ConnorDailyCover",
+    "upgrade": "remotion upgrade"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.286",
+    "@remotion/google-fonts": "^4.0.496",
+    "@remotion/media": "^4.0.286",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.286"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.6.3"
+  }
+}

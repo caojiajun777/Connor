@@ -178,19 +178,9 @@ export function AnnotationWorkspacePage() {
   const setLabel = (label: string) => {
     setDraft((d) => {
       const next: Draft = { ...d, human_label: label }
-      if (
-        d.human_label &&
-        d.human_label !== label &&
-        (label === 'include' || label === 'exclude') &&
-        (d.human_label === 'include' || d.human_label === 'exclude')
-      ) {
+      if (d.human_label && d.human_label !== label) {
         next.reason_codes = []
         next.note = ''
-      } else if (label === 'uncertain' || label === 'duplicate') {
-        next.reason_codes = []
-      } else if (label === 'include' || label === 'exclude') {
-        const allowed = new Set(label === 'include' ? includeReasons(meta) : excludeReasons(meta))
-        next.reason_codes = d.reason_codes.filter((c) => allowed.has(c))
       }
       return next
     })
@@ -206,26 +196,12 @@ export function AnnotationWorkspacePage() {
     })
   }
 
-  const convertLegacyToDuplicate = () => {
-    setDraft((d) => ({
-      ...d,
-      human_label: 'duplicate',
-      reason_codes: [],
-      note: d.note.trim() || '',
-    }))
-    setFormError(null)
-  }
-
   const validateLocal = (): string | null => {
     const note = draft.note.trim()
     if (draft.human_label === 'include' || draft.human_label === 'exclude') {
       const active = draft.reason_codes.filter((c) => !deprecated.has(c))
-      if (active.length < 1 && legacyCodes.length === 0) return `${draft.human_label} 至少选择 1 个理由`
-      if (draft.reason_codes.includes('other') && !note) return '选择 other 时必须填写说明'
-    }
-    if (draft.human_label === 'duplicate' && !note) return 'Duplicate 必须填写重复于哪条内容'
-    if (draft.human_label === 'uncertain' || draft.human_label === 'duplicate') {
-      if (draft.reason_codes.length) return `${draft.human_label} 不应带有 reason codes`
+      if (active.length < 1 && legacyCodes.length === 0) return `${LABEL_ZH[draft.human_label] || draft.human_label} 至少选择 1 个理由`
+      if (draft.reason_codes.includes('other') && !note) return '选择「其他」时必须填写说明'
     }
     return null
   }
@@ -319,8 +295,6 @@ export function AnnotationWorkspacePage() {
       const key = e.key.toLowerCase()
       if (key === 'i') setLabel('include')
       if (key === 'e' && !e.ctrlKey) setLabel('exclude')
-      if (key === 'u') setLabel('uncertain')
-      if (key === 'd') setLabel('duplicate')
       if (key === 'j') move(1)
       if (key === 'k') move(-1)
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -337,8 +311,7 @@ export function AnnotationWorkspacePage() {
 
   const showReasons = draft.human_label === 'include' || draft.human_label === 'exclude'
   const showOtherNote = showReasons && draft.reason_codes.includes('other')
-  const showDuplicateNote = draft.human_label === 'duplicate'
-  const noteRequired = showOtherNote || showDuplicateNote
+  const noteRequired = showOtherNote
   const activeReasonCount = draft.reason_codes.filter((c) => !deprecated.has(c)).length
 
   return (
@@ -370,7 +343,7 @@ export function AnnotationWorkspacePage() {
       <div className="row" style={{ marginBottom: '0.75rem' }}>
         {['all', 'unreviewed', 'machine_selected', 'machine_not_selected', 'disagree', ...labels].map((f) => (
           <button key={f} className={filter === f ? 'tab active' : 'tab'} onClick={() => setFilter(f)}>
-            {f}
+            {LABEL_ZH[f] || f}
           </button>
         ))}
       </div>
@@ -501,8 +474,10 @@ export function AnnotationWorkspacePage() {
                 </button>
               ))}
             </div>
-            {draft.human_label === 'duplicate' && (
-              <p className="muted">{LABEL_HELP.duplicate}</p>
+            {draft.human_label && draft.human_label !== 'include' && draft.human_label !== 'exclude' && (
+              <p className="warn">
+                当前为历史标签「{LABEL_ZH[draft.human_label] || draft.human_label}」，请改选「入选」或「不入选」后保存。
+              </p>
             )}
 
             {legacyCodes.length > 0 && (
@@ -515,15 +490,13 @@ export function AnnotationWorkspacePage() {
                     </span>
                   ))}
                 </div>
-                <button type="button" className="btn secondary" disabled={readOnly} onClick={convertLegacyToDuplicate}>
-                  转为 Duplicate 标签并清空废弃码
-                </button>
+                <p className="muted">请改选「不入选」并勾选新理由后保存。</p>
               </div>
             )}
 
             {showReasons && (
               <>
-                <label>Reason codes（勾选）</label>
+                <label>理由（选 1–{softMax} 个）</label>
                 <div className="chips">
                   {allowedReasons.map((code) => (
                     <button
@@ -531,7 +504,6 @@ export function AnnotationWorkspacePage() {
                       type="button"
                       className={draft.reason_codes.includes(code) ? 'chip active' : 'chip'}
                       disabled={readOnly}
-                      title={code === 'already_covered' ? LABEL_HELP.already_covered : undefined}
                       onClick={() => toggleReason(code)}
                     >
                       {REASON_LABEL_ZH[code] || code}
@@ -567,23 +539,13 @@ export function AnnotationWorkspacePage() {
               onChange={(e) => setDraft({ ...draft, human_rank: e.target.value })}
             />
 
-            <label>
-              {noteRequired
-                ? showDuplicateNote
-                  ? 'Note（必填：重复于谁）'
-                  : 'Other reason（必填）'
-                : 'Note（可选）'}
-            </label>
+            <label>{noteRequired ? '其他理由说明（必填）' : '备注（可选）'}</label>
             <textarea
               rows={5}
               value={draft.note}
               disabled={readOnly}
               placeholder={
-                showDuplicateNote
-                  ? '请说明重复于哪条候选、账号或事件'
-                  : showOtherNote
-                    ? '请说明未被现有原因码覆盖的原因'
-                    : '可选备注'
+                showOtherNote ? '请说明未被现有原因码覆盖的原因' : '可选备注'
               }
               onChange={(e) => setDraft({ ...draft, note: e.target.value })}
             />

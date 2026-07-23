@@ -6,7 +6,7 @@ from app.daily.eligibility import cursor_eligible_from_normalized, is_cursor_eli
 from app.daily.enums import CollectionStatus
 from app.daily.outbox_sync import sync_pending_cursor_outbox
 from app.daily.redis_cursors import RedisCursorStore
-from app.daily.scan import ScanPost, scan_timeline_increments
+from app.daily.scan import ScanPost, apply_report_day_cursor_policy, scan_timeline_increments
 from app.x_watchlist.schemas import PostType
 
 
@@ -254,3 +254,39 @@ def test_outbox_sync_writes_redis_without_ttl() -> None:
     assert row.status == "synced"
     assert store.get("openai") is not None
     assert store.get("openai").post_id == "123"
+
+
+def test_report_day_policy_keeps_only_report_day_increments() -> None:
+    now = datetime(2026, 7, 23, 12, 0, tzinfo=timezone.utc)
+    # 2h ago = still 7/23 Shanghai; 30h ago = 7/22 Shanghai
+    posts = [_post("today", 2, now=now), _post("yesterday", 30, now=now)]
+    scan = scan_timeline_increments(
+        posts,
+        old_cursor_post_id=None,
+        last_success_at=None,
+        now=now,
+    )
+    shaped = apply_report_day_cursor_policy(
+        scan, posts, report_date="2026-07-23", tz_name="Asia/Shanghai"
+    )
+    assert [p.post_id for p in shaped.increments] == ["today"]
+    assert shaped.should_advance_cursor is True
+
+
+def test_report_day_policy_mints_cursor_when_no_report_day_posts() -> None:
+    now = datetime(2026, 7, 23, 12, 0, tzinfo=timezone.utc)
+    posts = [_post("old1", 30, now=now), _post("old2", 40, now=now)]
+    scan = scan_timeline_increments(
+        posts,
+        old_cursor_post_id=None,
+        last_success_at=None,
+        now=now,
+    )
+    shaped = apply_report_day_cursor_policy(
+        scan, posts, report_date="2026-07-23", tz_name="Asia/Shanghai"
+    )
+    assert shaped.increments == []
+    assert shaped.should_advance_cursor is True
+    assert shaped.cursor_after_post_id == "old1"
+    assert shaped.collection_status == CollectionStatus.SUCCESS.value
+    assert shaped.warning and "minted_cursor_no_posts_on_2026-07-23" in shaped.warning

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -21,7 +22,7 @@ FETCH_PAGE_SIZE = 20
 # Safety cap: paginate until we see posts older than the window, or hit this many pages.
 MAX_PAGES_PER_ACCOUNT = 10
 # Extra attempts when MCP returns posts=[] with no error (common flaky empty profile load).
-EMPTY_POSTS_MAX_RETRIES = 2
+EMPTY_POSTS_MAX_RETRIES = int(os.environ.get("CONNOR_EMPTY_POSTS_MAX_RETRIES", "1"))
 
 
 @dataclass

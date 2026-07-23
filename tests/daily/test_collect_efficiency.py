@@ -23,17 +23,19 @@ def _acct(handle: str, *, source_type: str, priority: str) -> XSourceAccount:
     )
 
 
-def test_sort_accounts_priority_and_source_order() -> None:
+def test_sort_accounts_round_robin_keeps_analysts_early() -> None:
     accounts = [
-        _acct("emp1", source_type="employee", priority="P0"),
-        _acct("orgB", source_type="official", priority="P1"),
-        _acct("orgA", source_type="official", priority="P0"),
-        _acct("analyst1", source_type="analyst", priority="P0"),
-        _acct("leak1", source_type="leak", priority="P0"),
+        _acct("o1", source_type="official", priority="P1"),
+        _acct("o2", source_type="official", priority="P1"),
+        _acct("o3", source_type="official", priority="P1"),
+        _acct("a1", source_type="analyst", priority="P1"),
+        _acct("a2", source_type="analyst", priority="P1"),
+        _acct("e1", source_type="employee", priority="P1"),
     ]
     ordered = [a.handle for a in sort_accounts_for_collect(accounts)]
-    # Leaks before analysts so browser sessions don't starve frontier scoops.
-    assert ordered == ["orgA", "leak1", "analyst1", "emp1", "orgB"]
+    # Analysts appear interleaved early, not after every official.
+    assert ordered.index("a1") < ordered.index("o3")
+    assert ordered == ["o1", "a1", "e1", "o2", "a2", "o3"]
 
 
 def test_defer_employee_source_types(monkeypatch: pytest.MonkeyPatch) -> None:

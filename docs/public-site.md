@@ -2,6 +2,9 @@
 
 公开用户站（`web/`）与内部 Console（`frontend/`）分离。公开站只展示 `publication_status=published` 的日报。
 
+**生产部署：** 本机 + Cloudflare Tunnel → https://aiconnor.cn  
+详见 [`docs/cloudflare-tunnel.md`](./cloudflare-tunnel.md)。
+
 ## 架构
 
 ```text
@@ -43,7 +46,11 @@ npm run dev
 
 ## 定时发布
 
-每天 **北京时间 06:00** 由 Windows 计划任务 `ConnorDailyPublish` 唤醒机器并跑全链路：
+**网页对外承诺**：北京时间每日 **12:00** 更新当日前沿 AI 日报（页脚文案）。
+
+**本机流水线实际开跑**：北京时间 **06:00**（`Asia/Shanghai`），在 **12:00 对外更新**前完成写报与发布：
+
+- 06:00 主采集 → 10 分钟间隔 auto-retry（至 **10:30** 截止）→ 写报/发布（预留约 90 分钟）
 
 `collect → summarize → evaluate → select → write-report → publish-report`
 
@@ -52,9 +59,11 @@ npm run dev
 - 或：`python -m app.cli daily publish-today`
 - 多日补跑：`python scripts/daily_and_publish.py --dates 2026-07-18,2026-07-19,2026-07-20 --accept-gap`
 - 日志：`data/logs/`（`task_wrapper_*.log` + `daily_publish_*.log`）
-- 触发：每天 **06:00 / 07:00 / 09:00**（已发布则跳过），以及登录后约 3 分钟补跑。
+- 触发：每天 **06:00 / 07:00 / 08:30**（已发布则跳过）；电脑当时没开/在睡，则 **开机可用后补跑**（`StartWhenAvailable`）+ **登录后约 3 分钟**再补一次。
+- 启动器会加载 `.env`、传 `--split-by-day --accept-gap`，并在 production 内 **自动重试失败账号**（每 10 分钟，剩余可重试 ≤5 或 **10:30 截止** 则继续写报）。
 - 启动器会在唤醒后 settle 约 45 秒，并最多等 Redis/Docker ~180 秒。
-- 要求：机器可睡眠/待机，但不要关机；保持当前 Windows 用户登录（采集依赖浏览器会话）；Docker Desktop 开机自启（Redis 容器 `task-redis`）。
+- 要求：尽量用睡眠/待机而非关机；保持当前 Windows 用户登录（采集依赖浏览器会话）；Docker Desktop 开机自启（Redis 容器 `task-redis`）。
+- 调度默认：`CONNOR_SCHEDULE_HOUR=8`、`CONNOR_SCHEDULE_TZ=Asia/Shanghai`（可用环境变量覆盖）。
 
 已发布日报默认不可原地覆盖；需 `withdraw-report` 后再处理。
 
@@ -78,7 +87,17 @@ npm run dev
 1. 设置 `CONNOR_OPS_API_KEY`，勿把 API 以 `0.0.0.0` 裸奔公网而不鉴权。  
 2. 媒体默认写入相对 `/media/...`，由 Next rewrite 到 FastAPI；换 CDN 时改 `CONNOR_MEDIA_PUBLIC_BASE_URL` 并**重新下载/发布**已有日报。  
 3. `publish` 会在媒体下载后刷新 digest 图片 URL。  
-4. 定时发布默认 **不** `accept_partial_media`；失败需人工处理或显式传参。
+4. 定时发布默认 **不** `accept_partial_media`；失败需人工处理或显式传参。  
+5. 公网入口为 Cloudflare Tunnel（不是 Pages）；域名与启停见 [`cloudflare-tunnel.md`](./cloudflare-tunnel.md)。
+
+## 生产部署（摘要）
+
+| 项 | 值 |
+|----|-----|
+| 站点 | https://aiconnor.cn |
+| 架构 | Cloudflare DNS/Tunnel → 本机 Next `:3000` → FastAPI `:8080` |
+| Tunnel | `connor-public` |
+| 文档 | [`cloudflare-tunnel.md`](./cloudflare-tunnel.md) |
 
 ## 测试
 

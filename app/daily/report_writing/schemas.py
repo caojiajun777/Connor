@@ -37,6 +37,8 @@ class EventPackage(BaseModel):
     primary_post_id: str | None = None
     merge_reason: str = ""
     importance: Literal["high", "medium", "low"] = "medium"
+    # Lower = more important within the day / category (1 = lead). Default 100 = unset.
+    priority: int = Field(default=100, ge=1, le=999)
     external_links: list[str] = Field(default_factory=list)
 
 

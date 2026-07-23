@@ -1,11 +1,11 @@
 import { MediaGallery } from "@/components/daily/MediaGallery";
 import { EvidenceBlock } from "@/components/daily/EvidenceBlock";
+import { DigestTocLink } from "@/components/daily/DigestTocLink";
 import { SignalMarker } from "@/components/shared/SignalMarker";
 import { SignalMeta } from "@/components/shared/SignalMeta";
 import {
-  padRank,
-  postIdFromUrl,
   summarizeHandles,
+  postIdFromUrl,
 } from "@/lib/format";
 import type {
   PublicDigestDocument,
@@ -78,7 +78,7 @@ function DigestArticle({
   return (
     <article
       id={`digest-${item.rank}`}
-      className={`scroll-mt-28 ${
+      className={`scroll-mt-[5.75rem] ${
         variant === "lead" ? "pb-10 sm:pb-12" : compact ? "py-6" : "py-8 sm:py-9"
       }`}
     >
@@ -155,17 +155,10 @@ export function DigestBody({ digest, sources = [] }: DigestBodyProps) {
                 <ol className="space-y-1.5">
                   {section.entries.map((entry) => (
                     <li key={`${section.category}-${entry.rank}`}>
-                      <a
-                        href={`#digest-${entry.rank}`}
-                        className="toc-link group flex gap-3 text-[14px] leading-snug text-text-secondary sm:text-[15px]"
-                      >
-                        <span className="shrink-0 font-mono text-[11px] tabular-nums tracking-wider text-muted">
-                          {padRank(entry.rank)}
-                        </span>
-                        <span className="group-hover:underline group-hover:underline-offset-4">
-                          {entry.headline}
-                        </span>
-                      </a>
+                      <DigestTocLink
+                        rank={entry.rank}
+                        headline={entry.headline}
+                      />
                     </li>
                   ))}
                 </ol>

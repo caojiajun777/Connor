@@ -62,4 +62,12 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+  analyticsSummary: (days = 7) =>
+    request<any>(`/api/console/analytics/summary?days=${days}`),
+  analyticsTimeseries: (days = 7) =>
+    request<any>(`/api/console/analytics/timeseries?days=${days}`),
+  analyticsPaths: (days = 7, limit = 20) =>
+    request<any>(`/api/console/analytics/paths?days=${days}&limit=${limit}`),
+  analyticsHours: (days = 7) =>
+    request<any>(`/api/console/analytics/hours?days=${days}`),
 }

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import time
@@ -15,7 +16,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.daily.config import DailySettings
+from app.daily.config import DailySettings, load_project_dotenv
 from app.daily.db import create_db_engine, create_session_factory, init_schema
 from app.daily.db.models import DailyReport, Post, PostEvaluation, RunPost
 from app.daily.enums import PublicationStatus, RunStatus
@@ -84,7 +85,7 @@ def ensure_postgres() -> None:
 def ensure_redis(*, container: str = REDIS_CONTAINER, wait_sec: int = 180) -> None:
     """Make sure Docker Redis is up (used for live collect cursors).
 
-    wait_sec defaults high because the 06:00 scheduled task often starts right
+    wait_sec defaults high because the 08:00 scheduled task often starts right
     after Modern Standby wake, before Docker Desktop is ready.
     """
     # Prefer starting the known container; start Docker Desktop if docker CLI is cold.
@@ -353,6 +354,9 @@ def run_daily_and_publish(
 ) -> DailyPublishResult:
     cfg = ScheduleConfig.from_env()
     report_date = report_date or shanghai_report_date(cfg)
+    # Pin collect-side report-day filtering / cursor minting to this calendar day.
+    os.environ["CONNOR_COLLECT_REPORT_DATE"] = report_date
+    os.environ.setdefault("CONNOR_SCHEDULE_TZ", cfg.timezone)
     _log(f"daily-and-publish start date={report_date} tz={cfg.timezone} dry_run={dry_run}")
 
     if not skip_deps and not dry_run:
@@ -571,6 +575,8 @@ def backfill_and_publish(
 
 def main(argv: list[str] | None = None) -> int:
     import argparse
+
+    load_project_dotenv(override=False)
 
     parser = argparse.ArgumentParser(description="Connor daily live run + publish")
     parser.add_argument("--force", action="store_true", help="Ignore already-published skip")

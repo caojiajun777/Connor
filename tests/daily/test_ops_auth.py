@@ -84,6 +84,18 @@ def test_console_gated_when_key_set(
     assert ok.status_code != 401
 
 
+def test_ops_blocked_via_public_proxy_without_key(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("CONNOR_OPS_API_KEY", raising=False)
+    monkeypatch.delenv("CONNOR_ALLOW_INSECURE_LOCAL", raising=False)
+    denied = client.get(
+        "/api/console/overview",
+        headers={"CF-Connecting-IP": "8.8.8.8"},
+    )
+    assert denied.status_code == 403
+
+
 def test_default_media_base_is_relative(
     monkeypatch: pytest.MonkeyPatch, tmp_path
 ) -> None:

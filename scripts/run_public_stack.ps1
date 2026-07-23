@@ -20,7 +20,8 @@ if (-not $SiteUrl) {
   Write-Warning "CONNOR_PUBLIC_SITE_URL is empty — set it to https://your.domain before going public."
 }
 if (-not $env:CONNOR_OPS_API_KEY) {
-  Write-Warning "CONNOR_OPS_API_KEY is empty — ops/console only allow localhost until set."
+  Write-Error "CONNOR_OPS_API_KEY is required for public/tunnel use (ops/console must not be keyless behind Next rewrites)."
+  exit 1
 }
 
 $env:CONNOR_PUBLIC_API_BASE = $ApiBase

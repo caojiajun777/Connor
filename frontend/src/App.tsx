@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ConsoleLayout } from './layouts/ConsoleLayout'
+import { AnalyticsPage } from './pages/AnalyticsPage'
 import { AnnotationDiffPage } from './pages/AnnotationDiffPage'
 import { AnnotationWorkspacePage } from './pages/AnnotationWorkspacePage'
 import { EditorialInboxPage } from './pages/EditorialInboxPage'
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/console" replace />} />
           <Route path="/console" element={<ConsoleLayout />}>
             <Route index element={<OverviewPage />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="runs" element={<RunsPage />} />
             <Route path="runs/:runId" element={<RunDetailPage />} />
             <Route path="editorial" element={<EditorialInboxPage />} />

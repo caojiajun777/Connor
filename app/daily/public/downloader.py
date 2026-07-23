@@ -8,8 +8,9 @@ import socket
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
-from urllib.request import Request, urlopen
+from urllib.error import HTTPError
+from urllib.parse import urljoin, urlparse
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -23,7 +24,23 @@ from app.daily.public.storage import MediaStorage, default_media_storage
 MAX_BYTES = 15 * 1024 * 1024
 TIMEOUT_SEC = 20
 MAX_REDIRECTS = 3
-ALLOWED_CONTENT_PREFIXES = ("image/", "video/")
+ALLOWED_CONTENT_TYPES = frozenset(
+    {
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+        "video/mp4",
+    }
+)
+ALLOWED_HOST_SUFFIXES = (
+    "twimg.com",
+    "twitter.com",
+    "x.com",
+    "pscp.tv",
+    "periscope.tv",
+)
 
 
 class MediaDownloadError(Exception):
@@ -56,9 +73,11 @@ def validate_media_url(url: str) -> str:
         raise MediaDownloadError("only https URLs are allowed")
     if not parsed.hostname:
         raise MediaDownloadError("missing hostname")
-    host = parsed.hostname.lower()
+    host = parsed.hostname.lower().rstrip(".")
     if host in {"localhost", "metadata.google.internal"} or host.endswith(".local"):
         raise MediaDownloadError("host blocked")
+    if not any(host == suffix or host.endswith("." + suffix) for suffix in ALLOWED_HOST_SUFFIXES):
+        raise MediaDownloadError("host not allowlisted")
     if not _is_public_ip(host):
         raise MediaDownloadError("non-public IP blocked")
     return url
@@ -83,27 +102,56 @@ def _extension_for(content_type: str | None, media_type: str) -> str:
     return "bin"
 
 
+def _no_redirect_opener():
+    opener = build_opener()
+    opener.handlers = [
+        handler
+        for handler in opener.handlers
+        if not isinstance(handler, HTTPRedirectHandler)
+    ]
+    return opener
+
+
+def _normalize_content_type(content_type: str | None) -> str | None:
+    if not content_type:
+        return None
+    return content_type.split(";")[0].strip().lower() or None
+
+
 def fetch_bytes(url: str) -> tuple[bytes, str | None]:
+    """Fetch media without auto-following redirects (re-validate each hop)."""
     current = validate_media_url(url)
+    opener = _no_redirect_opener()
     for _ in range(MAX_REDIRECTS + 1):
         req = Request(current, headers={"User-Agent": "ConnorMediaFetcher/1.0"})
-        with urlopen(req, timeout=TIMEOUT_SEC) as resp:  # noqa: S310 — validated https + public IP
-            if 300 <= getattr(resp, "status", 200) < 400:
+        try:
+            resp = opener.open(req, timeout=TIMEOUT_SEC)  # noqa: S310 — validated https + public IP
+        except HTTPError as err:
+            # Some stacks surface 3xx as HTTPError when redirects are disabled.
+            if 300 <= err.code < 400:
+                location = err.headers.get("Location") if err.headers else None
+                if not location:
+                    raise MediaDownloadError("redirect without location") from err
+                current = validate_media_url(urljoin(current, location))
+                continue
+            raise MediaDownloadError(f"http {err.code}") from err
+
+        with resp:
+            status = getattr(resp, "status", 200) or 200
+            if 300 <= status < 400:
                 location = resp.headers.get("Location")
                 if not location:
                     raise MediaDownloadError("redirect without location")
-                current = validate_media_url(location)
+                current = validate_media_url(urljoin(current, location))
                 continue
-            content_type = resp.headers.get("Content-Type")
-            if content_type and not content_type.lower().startswith(ALLOWED_CONTENT_PREFIXES):
-                # Some CDNs omit type; still reject obvious HTML.
-                if "text/html" in content_type.lower() or "application/json" in content_type.lower():
-                    raise MediaDownloadError(f"unexpected content-type: {content_type}")
+            content_type = _normalize_content_type(resp.headers.get("Content-Type"))
+            if content_type and content_type not in ALLOWED_CONTENT_TYPES:
+                raise MediaDownloadError(f"unexpected content-type: {content_type}")
             data = resp.read(MAX_BYTES + 1)
             if len(data) > MAX_BYTES:
                 raise MediaDownloadError("file too large")
-            if data[:15].lstrip().lower().startswith((b"<!doctype", b"<html")):
-                raise MediaDownloadError("html response rejected")
+            if data[:15].lstrip().lower().startswith((b"<!doctype", b"<html", b"<svg")):
+                raise MediaDownloadError("markup response rejected")
             return data, content_type
     raise MediaDownloadError("too many redirects")
 

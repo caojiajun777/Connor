@@ -1,3 +1,4 @@
+import { HomeJumpButton } from "@/components/shared/HomeJumpButton";
 import { SiteFooter } from "@/components/shared/SiteFooter";
 import { SiteNav } from "@/components/shared/SiteNav";
 
@@ -28,6 +29,7 @@ export function SiteShell({
         <SiteNav />
       </header>
       <main className="flex-1">{children}</main>
+      <HomeJumpButton />
       {showFooter ? <SiteFooter tone={tone} /> : null}
     </div>
   );

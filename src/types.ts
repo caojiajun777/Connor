@@ -36,6 +36,10 @@ export interface SearchResult {
   posts: XPost[];
   has_more: boolean;
   next_offset: number | null;
+  /** Why scrolling stopped; useful when posts are empty (e.g. empty_first_screen). */
+  scroll_stop_reason?: "enough" | "empty_first_screen" | "max_passes" | "scroll";
+  /** True when the first screen (after one recovery scroll) still had zero tweets. */
+  first_screen_empty?: boolean;
 }
 
 export type LoginReasonCode =

@@ -388,8 +388,14 @@ export async function extractPosts(page: Page): Promise<XPost[]> {
   });
 }
 
-async function collectPosts(page: Page, needed: number): Promise<XPost[]> {
+type CollectPostsResult = {
+  posts: XPost[];
+  stopReason: "enough" | "empty_first_screen" | "max_passes" | "scroll";
+};
+
+async function collectPosts(page: Page, needed: number): Promise<CollectPostsResult> {
   const seen = new Map<string, XPost>();
+  let stopReason: CollectPostsResult["stopReason"] = "max_passes";
   for (let pass = 0; pass < 12 && seen.size < needed; pass += 1) {
     for (const post of await extractPosts(page)) seen.set(post.post_id, post);
     const decision = nextScrollDecision({
@@ -397,11 +403,58 @@ async function collectPosts(page: Page, needed: number): Promise<XPost[]> {
       seenCount: seen.size,
       needed
     });
+    stopReason = decision.reason;
     if (!decision.continueScrolling) break;
     await page.mouse.wheel(0, 1400);
     await page.waitForTimeout(700);
   }
-  return [...seen.values()];
+  return { posts: [...seen.values()], stopReason };
+}
+
+/** Soft blocks that still leave the auth chrome visible (rate-limit / generic error). */
+async function softBlockStatus(page: Page): Promise<SessionStatus | null> {
+  const bodyText = await page
+    .locator("body")
+    .innerText({ timeout: Math.min(timeoutMs(), 5_000) })
+    .catch(() => "");
+  const normalizedText = bodyText.toLowerCase();
+  const rateLimited =
+    /rate limit|too many requests|请求过多|稍后再试|retry later/.test(normalizedText);
+  const serviceError = /something went wrong|try reloading|出错了|重新加载/.test(normalizedText);
+  if (!rateLimited && !serviceError) return null;
+
+  const classification = rateLimited
+    ? {
+        authenticated: false as const,
+        reason_code: "x_rate_limited" as const,
+        reason: "X is rate-limiting this session or network.",
+        recommended_actions: [
+          "Wait before retrying and reduce search frequency.",
+          "Avoid running multiple X Agent searches concurrently."
+        ]
+      }
+    : {
+        authenticated: false as const,
+        reason_code: "x_service_error" as const,
+        reason: "X returned a service error or generic page failure.",
+        recommended_actions: [
+          "Retry once after a short wait.",
+          "If it persists, open X Home manually to check service availability."
+        ]
+      };
+
+  return {
+    ...classification,
+    current_url: page.url(),
+    title: await page.title().catch(() => ""),
+    http_status: null,
+    profile_dir: profileDir(),
+    has_auth_cookie: true,
+    has_csrf_cookie: true,
+    auth_ui_detected: true,
+    login_ui_detected: false,
+    timeline_posts_visible: await page.locator('article[data-testid="tweet"]').count()
+  };
 }
 
 export async function searchPosts(
@@ -426,15 +479,17 @@ export async function searchPosts(
     .catch(() => undefined);
 
   const collected = await collectPosts(page, input.offset + input.limit + 1);
-  const posts = collected.slice(input.offset, input.offset + input.limit);
-  const hasMore = collected.length > input.offset + input.limit;
+  const posts = collected.posts.slice(input.offset, input.offset + input.limit);
+  const hasMore = collected.posts.length > input.offset + input.limit;
   return {
     query,
     count: posts.length,
     offset: input.offset,
     posts,
     has_more: hasMore,
-    next_offset: hasMore ? input.offset + posts.length : null
+    next_offset: hasMore ? input.offset + posts.length : null,
+    scroll_stop_reason: collected.stopReason,
+    first_screen_empty: collected.stopReason === "empty_first_screen"
   };
 }
 
@@ -445,23 +500,39 @@ export async function profilePosts(
   offset: number
 ): Promise<SearchResult> {
   const cleanHandle = handle.replace(/^@/, "");
-  await page.goto(`${X_BASE_URL}/${cleanHandle}`, { waitUntil: "domcontentloaded" });
-  await assertAuthenticated(page);
-  await page
-    .locator('article[data-testid="tweet"]')
-    .first()
-    .waitFor({ state: "visible", timeout: firstTweetWaitMs(timeoutMs()) })
-    .catch(() => undefined);
-  const collected = await collectPosts(page, offset + limit + 1);
-  const posts = collected.slice(offset, offset + limit);
-  const hasMore = collected.length > offset + limit;
+  const needed = offset + limit + 1;
+
+  const loadProfile = async (): Promise<CollectPostsResult> => {
+    await page.goto(`${X_BASE_URL}/${cleanHandle}`, { waitUntil: "domcontentloaded" });
+    await assertAuthenticated(page);
+    await page
+      .locator('article[data-testid="tweet"]')
+      .first()
+      .waitFor({ state: "visible", timeout: firstTweetWaitMs(timeoutMs()) })
+      .catch(() => undefined);
+    return collectPosts(page, needed);
+  };
+
+  let collected = await loadProfile();
+
+  // Fail-forward: classify soft blocks, but do not burn time on reload loops.
+  // Empty / rate-limited handles are retried in a later collect pass.
+  if (collected.posts.length === 0) {
+    const soft = await softBlockStatus(page);
+    if (soft) throw new XAuthenticationError(soft);
+  }
+
+  const posts = collected.posts.slice(offset, offset + limit);
+  const hasMore = collected.posts.length > offset + limit;
   return {
     query: `from:${cleanHandle}`,
     count: posts.length,
     offset,
     posts,
     has_more: hasMore,
-    next_offset: hasMore ? offset + posts.length : null
+    next_offset: hasMore ? offset + posts.length : null,
+    scroll_stop_reason: collected.stopReason,
+    first_screen_empty: collected.posts.length === 0 && collected.stopReason === "empty_first_screen"
   };
 }
 

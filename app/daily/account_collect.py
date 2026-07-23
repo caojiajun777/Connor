@@ -9,7 +9,12 @@ from typing import Any
 from app.daily.eligibility import cursor_eligible_from_normalized
 from app.daily.enums import CollectionStatus
 from app.daily.redis_cursors import WorkingCursor
-from app.daily.scan import AccountScanResult, ScanPost, scan_timeline_increments
+from app.daily.scan import (
+    AccountScanResult,
+    ScanPost,
+    apply_report_day_cursor_policy,
+    scan_timeline_increments,
+)
 from app.x_watchlist.mcp_client import MCPClientError, MCPFatalSessionError, XNewsMCPClient
 from app.x_watchlist.normalizer import normalize_mcp_post
 from app.x_watchlist.schemas import NormalizedPost, XSourceAccount, utc_now_iso
@@ -20,10 +25,19 @@ MAX_NEW_POSTS_SAFETY_LIMIT = 200
 MAX_PAGES_PER_ACCOUNT = int(os.environ.get("CONNOR_MAX_PAGES_PER_ACCOUNT", "20"))
 # No-cursor / first-run: stop sooner — one calendar day rarely needs 20 pages.
 FIRST_RUN_MAX_PAGES = int(os.environ.get("CONNOR_FIRST_RUN_MAX_PAGES", "5"))
-# Empty first page: 1 retry is enough; more mostly burns time on quiet accounts.
+# Empty first page: fail-forward (retry once). Deeper recovery is a separate retry pass.
 EMPTY_POSTS_MAX_RETRIES = int(os.environ.get("CONNOR_EMPTY_POSTS_MAX_RETRIES", "1"))
 # Override with CONNOR_CHASE_HOURS for first-day / narrowed windows (default 72).
 CHASE_HOURS = int(os.environ.get("CONNOR_CHASE_HOURS", "72"))
+
+
+def _collect_report_date() -> str:
+    # Read at call time — daily_publish sets this after modules are imported.
+    return os.environ.get("CONNOR_COLLECT_REPORT_DATE", "").strip()
+
+
+def _collect_tz() -> str:
+    return os.environ.get("CONNOR_SCHEDULE_TZ", "Asia/Shanghai").strip() or "Asia/Shanghai"
 
 
 def page_cap_for_account(*, has_cursor: bool) -> int:
@@ -206,6 +220,14 @@ async def collect_one_account_incremental(
                     page_incomplete=incomplete,
                     accept_gap=accept_gap,
                 )
+                report_day = _collect_report_date()
+                if report_day:
+                    scan = apply_report_day_cursor_policy(
+                        scan,
+                        scan_posts,
+                        report_date=report_day,
+                        tz_name=_collect_tz(),
+                    )
                 # Keep only normalized posts that are in increments.
                 increment_ids = {p.post_id for p in scan.increments}
                 kept = [p for p in normalized if p.post_id in increment_ids]

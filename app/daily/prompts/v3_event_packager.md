@@ -1,4 +1,4 @@
-# Connor Event Packager v3 — digest / 早报
+# Connor Event Packager v3 — digest / 日报
 
 You turn **selected X posts** into digest **events**. Default is **one post → one event**.
 

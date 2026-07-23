@@ -7,11 +7,14 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import delete, select
 
 from app.daily.api import create_app
 from app.daily.config import DailySettings
 from app.daily.db import create_db_engine, create_session_factory, init_schema
 from app.daily.db.models import (
+    DailyReport,
+    DailyReportItem,
     Post,
     PostSummary,
     Run,
@@ -197,6 +200,150 @@ def test_reorder_digest_json_category_sequential_ranks() -> None:
     assert cat_ranks["开发生态"] == [2]
     assert cat_ranks["技术与洞察"] == [3]
     assert "概览要闻" not in cat_ranks
+
+
+def test_reorder_puts_gemini_ahead_of_xiaomi_robot() -> None:
+    from app.daily.report_writing.assemble import reorder_digest_json
+
+    raw = {
+        "format": "digest_v1",
+        "items": [
+            {
+                "rank": 1,
+                "category": "模型发布",
+                "headline": "小米机器人基础模型 Xiaomi-Robotics-1 在 Hugging Face 发布",
+                "blurb": "b",
+                "body": "body",
+                "event_id": "xiaomi",
+                "links": [],
+                "citation_post_ids": [],
+                "images": [],
+            },
+            {
+                "rank": 2,
+                "category": "模型发布",
+                "headline": "Google 正式发布 Gemini 3.6 Flash 与 3.5 Flash-Lite",
+                "blurb": "b",
+                "body": "body",
+                "event_id": "gemini",
+                "links": [],
+                "citation_post_ids": [],
+                "images": [],
+            },
+        ],
+        "toc": [],
+    }
+    packages = [
+        {
+            "event_id": "xiaomi",
+            "headline": raw["items"][0]["headline"],
+            "category": "模型发布",
+            "importance": "high",
+            "priority": 1,
+            "citation_post_ids": ["p1"],
+        },
+        {
+            "event_id": "gemini",
+            "headline": raw["items"][1]["headline"],
+            "category": "模型发布",
+            "importance": "high",
+            "priority": 2,
+            "citation_post_ids": ["p2"],
+        },
+    ]
+    out = reorder_digest_json(raw, event_packages=packages)
+    headlines = [i["headline"] for i in out["items"]]
+    assert "Gemini 3.6 Flash" in headlines[0]
+    assert "小米" in headlines[1]
+    assert [i["rank"] for i in out["items"]] == [1, 2]
+
+
+def test_reorder_all_categories_by_news_value() -> None:
+    from app.daily.report_writing.assemble import reorder_digest_json
+
+    raw = {
+        "format": "digest_v1",
+        "items": [
+            {
+                "rank": 1,
+                "category": "行业动态",
+                "headline": "爆料源称 OpenAI 安全事件涉及 GPT-5.6 Sol 及更先进模型",
+                "blurb": "b",
+                "body": "body",
+                "event_id": "leak",
+                "links": [],
+                "citation_post_ids": [],
+                "images": [],
+            },
+            {
+                "rank": 2,
+                "category": "行业动态",
+                "headline": "OpenAI 与 Hugging Face 联合公布安全事件：评估模型攻破 HF 生产环境",
+                "blurb": "b",
+                "body": "body",
+                "event_id": "official",
+                "links": [],
+                "citation_post_ids": [],
+                "images": [],
+            },
+            {
+                "rank": 3,
+                "category": "技术与洞察",
+                "headline": "相关人士称 Gemini 3.5 Flash-Lite 在多数场景优于前代",
+                "blurb": "b",
+                "body": "body",
+                "event_id": "soft",
+                "links": [],
+                "citation_post_ids": [],
+                "images": [],
+            },
+            {
+                "rank": 4,
+                "category": "技术与洞察",
+                "headline": "Nemotron 3 Ultra 在 IMO 2026 数学竞赛中取得 30/42 分",
+                "blurb": "b",
+                "body": "body",
+                "event_id": "imo",
+                "links": [],
+                "citation_post_ids": [],
+                "images": [],
+            },
+            {
+                "rank": 5,
+                "category": "开发生态",
+                "headline": "vLLM 宣布对 NVIDIA Cosmos 3 Edge 提供首日支持",
+                "blurb": "b",
+                "body": "body",
+                "event_id": "vllm",
+                "links": [],
+                "citation_post_ids": [],
+                "images": [],
+            },
+            {
+                "rank": 6,
+                "category": "开发生态",
+                "headline": "NVIDIA Blackwell Ultra 创 DeepSeek-V3 预训练性能纪录",
+                "blurb": "b",
+                "body": "body",
+                "event_id": "bw",
+                "links": [],
+                "citation_post_ids": [],
+                "images": [],
+            },
+        ],
+        "toc": [],
+    }
+    out = reorder_digest_json(raw, event_packages=[])
+    by_cat: dict[str, list[str]] = {}
+    for item in out["items"]:
+        by_cat.setdefault(item["category"], []).append(item["headline"])
+
+    assert "Blackwell" in by_cat["开发生态"][0]
+    assert "vLLM" in by_cat["开发生态"][1]
+    assert "IMO" in by_cat["技术与洞察"][0]
+    assert "相关人士称" in by_cat["技术与洞察"][1]
+    assert "联合公布" in by_cat["行业动态"][0]
+    assert "爆料源称" in by_cat["行业动态"][1]
 
 
 def test_packager_splits_unexplained_merges_and_covers_missing() -> None:
@@ -442,7 +589,7 @@ def test_mock_packager_and_writer_shape() -> None:
     assert all(e.citation_post_ids for e in packaged.events)
     assert all(e.category for e in packaged.events)
     written = mock_write_report_copy(packaged.events, report_date="2026-07-13")
-    assert written.title.startswith("AI 早报")
+    assert written.title.startswith("AI 日报")
     assert written.lead
     assert written.items
     assert all(item.body for item in written.items)
@@ -455,64 +602,83 @@ def test_mock_packager_and_writer_shape() -> None:
 def test_write_report_dry_run_creates_publishable_draft(db) -> None:
     run_id, post_ids = _seed_selection(db)
     day = (int(uuid4().hex[:2], 16) % 28) + 1
-    report_date = f"2198-07-{day:02d}"
+    report_date = f"2018-07-{day:02d}"
 
-    result = write_report_from_selection(
-        db,
-        source_run_id=run_id,
-        report_date=report_date,
-        dry_run=True,
-    )
-    db.commit()
+    try:
+        result = write_report_from_selection(
+            db,
+            source_run_id=run_id,
+            report_date=report_date,
+            dry_run=True,
+        )
+        db.commit()
 
-    assert result.dry_run is True
-    assert result.event_count >= 1
-    assert result.section_count >= 1
-    assert result.lead
+        assert result.dry_run is True
+        assert result.event_count >= 1
+        assert result.section_count >= 1
+        assert result.lead
 
-    report = pub.publish_report(
-        db, result.report_id, download_media=False, accept_partial_media=True
-    )
-    db.commit()
-    assert report.publication_status == PublicationStatus.PUBLISHED.value
-    assert isinstance(report.body_sections, dict)
-    assert report.body_sections.get("format") == "digest_v1"
-    assert report.body_sections.get("items")
-    assert report.event_packages
-    # Translations remain on source posts, not as overview body paste.
-    assert "忠实翻译" not in report.overview
-    for pid in post_ids:
-        assert pid in result.post_ids
+        report = pub.publish_report(
+            db, result.report_id, download_media=False, accept_partial_media=True
+        )
+        db.commit()
+        assert report.publication_status == PublicationStatus.PUBLISHED.value
+        assert isinstance(report.body_sections, dict)
+        assert report.body_sections.get("format") == "digest_v1"
+        assert report.body_sections.get("items")
+        assert report.event_packages
+        # Translations remain on source posts, not as overview body paste.
+        assert "忠实翻译" not in report.overview
+        for pid in post_ids:
+            assert pid in result.post_ids
 
-    client = TestClient(create_app(DailySettings.from_env(), skip_schema_init=False))
-    detail = client.get(f"/api/public/reports/{report_date}").json()
-    assert detail["format"] == "digest_v1"
-    assert detail["digest"]["items"]
-    assert detail["digest"]["toc"]
-    assert detail["lead"] == report.overview
-    assert detail["items"][0]["post"]["text_translated"]
-    assert "忠实翻译" in detail["items"][0]["post"]["text_translated"]
-
-    pub.withdraw_report(db, result.report_id)
-    db.commit()
+        client = TestClient(create_app(DailySettings.from_env(), skip_schema_init=False))
+        detail = client.get(f"/api/public/reports/{report_date}").json()
+        assert detail["format"] == "digest_v1"
+        assert detail["digest"]["items"]
+        assert detail["digest"]["toc"]
+        assert detail["lead"] == report.overview
+        assert detail["items"][0]["post"]["text_translated"]
+        assert "忠实翻译" in detail["items"][0]["post"]["text_translated"]
+    finally:
+        row = db.execute(
+            select(DailyReport).where(DailyReport.report_date == report_date)
+        ).scalar_one_or_none()
+        if row is not None:
+            db.execute(
+                delete(DailyReportItem).where(DailyReportItem.daily_report_id == row.id)
+            )
+            db.execute(delete(DailyReport).where(DailyReport.id == row.id))
+            db.commit()
 
 
 def test_ops_write_report_dry_run_endpoint(db) -> None:
     run_id, _ = _seed_selection(db)
     day = (int(uuid4().hex[:2], 16) % 28) + 1
-    report_date = f"2198-08-{day:02d}"
-    client = TestClient(create_app(DailySettings.from_env(), skip_schema_init=False))
-    res = client.post(
-        "/api/public/ops/write-report",
-        json={
-            "source_run_id": run_id,
-            "report_date": report_date,
-            "dry_run": True,
-        },
-    )
-    assert res.status_code == 200, res.text
-    payload = res.json()
-    assert payload["dry_run"] is True
-    assert payload["event_count"] >= 1
-    assert payload["section_count"] >= 1
-    assert payload["report_id"]
+    report_date = f"2018-08-{day:02d}"
+    try:
+        client = TestClient(create_app(DailySettings.from_env(), skip_schema_init=False))
+        res = client.post(
+            "/api/public/ops/write-report",
+            json={
+                "source_run_id": run_id,
+                "report_date": report_date,
+                "dry_run": True,
+            },
+        )
+        assert res.status_code == 200, res.text
+        payload = res.json()
+        assert payload["dry_run"] is True
+        assert payload["event_count"] >= 1
+        assert payload["section_count"] >= 1
+        assert payload["report_id"]
+    finally:
+        row = db.execute(
+            select(DailyReport).where(DailyReport.report_date == report_date)
+        ).scalar_one_or_none()
+        if row is not None:
+            db.execute(
+                delete(DailyReportItem).where(DailyReportItem.daily_report_id == row.id)
+            )
+            db.execute(delete(DailyReport).where(DailyReport.id == row.id))
+            db.commit()

@@ -37,6 +37,7 @@ class XNewsMCPSettings:
     chrome_path: str = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
     timeout_ms: str = "30000"
     max_page_load_retries: int = 1
+    # Fail-forward on soft limits; retry failed handles in a later pass.
     max_rate_limit_retries: int = 0
 
     @classmethod
@@ -58,6 +59,8 @@ class XNewsMCPSettings:
                 r"C:\Program Files\Google\Chrome\Application\chrome.exe",
             ),
             timeout_ms=os.environ.get("X_AGENT_TIMEOUT_MS", "30000"),
+            max_page_load_retries=int(os.environ.get("CONNOR_MCP_PAGE_LOAD_RETRIES", "1")),
+            max_rate_limit_retries=int(os.environ.get("CONNOR_MCP_RATE_LIMIT_RETRIES", "0")),
         )
 
 
@@ -78,7 +81,7 @@ class XNewsMCPClient:
                 "X_AGENT_TIMEOUT_MS": self.settings.timeout_ms,
                 # Keep serial page ops by default; browser process is still reused.
                 "X_AGENT_MAX_CONCURRENT_PAGES": os.environ.get(
-                    "X_AGENT_MAX_CONCURRENT_PAGES", "2"
+                    "X_AGENT_MAX_CONCURRENT_PAGES", "1"
                 ),
             },
         )
@@ -164,9 +167,15 @@ class XNewsMCPClient:
                 )
             except MCPRetryableError as exc:
                 last_error = exc
-                if exc.reason_code == "x_rate_limited" and attempts > self.settings.max_rate_limit_retries:
+                if (
+                    exc.reason_code == "x_rate_limited"
+                    and attempts > self.settings.max_rate_limit_retries
+                ):
                     raise
-                if exc.reason_code == "x_page_load_failed" and attempts > self.settings.max_page_load_retries:
+                if (
+                    exc.reason_code == "x_page_load_failed"
+                    and attempts > self.settings.max_page_load_retries
+                ):
                     raise
                 await asyncio.sleep(2 * attempts)
         if last_error:

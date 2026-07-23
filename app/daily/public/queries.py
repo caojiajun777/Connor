@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
@@ -24,6 +26,30 @@ from app.daily.public.schemas import (
     overview_excerpt,
 )
 
+# Public archive never shows far-future pytest pollution (2099 / 2197 / 2199…).
+_PUBLIC_YEAR_MIN = 2015
+
+
+def _public_year_max() -> int:
+    return datetime.now(timezone.utc).year + 1
+
+
+def is_public_archive_date(report_date: str) -> bool:
+    """True when a report_date is allowed on the public site / archive."""
+    if not report_date or len(report_date) < 4 or not report_date[:4].isdigit():
+        return False
+    year = int(report_date[:4])
+    return _PUBLIC_YEAR_MIN <= year <= _public_year_max()
+
+
+def _published_public_clause():
+    year_max = _public_year_max()
+    return (
+        DailyReport.publication_status == PublicationStatus.PUBLISHED.value,
+        DailyReport.report_date >= f"{_PUBLIC_YEAR_MIN:04d}-01-01",
+        DailyReport.report_date < f"{year_max + 1:04d}-01-01",
+    )
+
 
 def list_published_reports(
     session: Session,
@@ -34,10 +60,10 @@ def list_published_reports(
     cursor: str | None = None,
 ) -> PublicReportListResponse:
     limit = max(1, min(limit, 365))
-    q = select(DailyReport).where(
-        DailyReport.publication_status == PublicationStatus.PUBLISHED.value
-    )
+    q = select(DailyReport).where(*_published_public_clause())
     if year is not None:
+        if not (_PUBLIC_YEAR_MIN <= year <= _public_year_max()):
+            return PublicReportListResponse(items=[], next_cursor=None)
         prefix = f"{year:04d}-"
         q = q.where(DailyReport.report_date.startswith(prefix))
         if month is not None:
@@ -57,7 +83,7 @@ def list_published_reports(
     elif cursor is None:
         latest = session.execute(
             select(DailyReport.report_date)
-            .where(DailyReport.publication_status == PublicationStatus.PUBLISHED.value)
+            .where(*_published_public_clause())
             .order_by(desc(DailyReport.report_date))
             .limit(1)
         ).scalar_one_or_none()
@@ -83,10 +109,12 @@ def list_published_reports(
 
 
 def get_published_report(session: Session, report_date: str) -> PublicReportDetail | None:
+    if not is_public_archive_date(report_date):
+        return None
     report = session.execute(
         select(DailyReport).where(
             DailyReport.report_date == report_date,
-            DailyReport.publication_status == PublicationStatus.PUBLISHED.value,
+            *_published_public_clause(),
         )
     ).scalar_one_or_none()
     if report is None:
@@ -101,7 +129,7 @@ def get_published_report(session: Session, report_date: str) -> PublicReportDeta
     prev_date = session.execute(
         select(DailyReport.report_date)
         .where(
-            DailyReport.publication_status == PublicationStatus.PUBLISHED.value,
+            *_published_public_clause(),
             DailyReport.report_date < report.report_date,
         )
         .order_by(desc(DailyReport.report_date))
@@ -110,7 +138,7 @@ def get_published_report(session: Session, report_date: str) -> PublicReportDeta
     next_date = session.execute(
         select(DailyReport.report_date)
         .where(
-            DailyReport.publication_status == PublicationStatus.PUBLISHED.value,
+            *_published_public_clause(),
             DailyReport.report_date > report.report_date,
         )
         .order_by(DailyReport.report_date.asc())
@@ -161,6 +189,36 @@ def get_published_report(session: Session, report_date: str) -> PublicReportDeta
     )
 
 
+def _safe_public_asset_url(url: str | None) -> str | None:
+    """Only expose same-origin /media paths or allowlisted HTTPS CDNs."""
+    text = (url or "").strip()
+    if not text:
+        return None
+    if text.startswith("/") and not text.startswith("//"):
+        if "\\" in text or "\0" in text:
+            return None
+        if text.startswith("/media/"):
+            return text
+        return None
+    if not text.startswith("https://"):
+        return None
+    try:
+        from urllib.parse import urlparse
+
+        host = (urlparse(text).hostname or "").lower()
+    except Exception:  # noqa: BLE001
+        return None
+    allowed = (
+        "pbs.twimg.com",
+        "abs.twimg.com",
+        "video.twimg.com",
+        "ton.twitter.com",
+    )
+    if host in allowed or any(host.endswith("." + h) for h in allowed):
+        return text
+    return None
+
+
 def _serialize_digest(raw: dict) -> PublicDigestDocument:
     toc: list[PublicDigestTocSection] = []
     for section in raw.get("toc") or []:
@@ -186,7 +244,7 @@ def _serialize_digest(raw: dict) -> PublicDigestDocument:
         for idx, media in enumerate(item.get("images") or []):
             if not isinstance(media, dict):
                 continue
-            url = str(media.get("url") or "").strip()
+            url = _safe_public_asset_url(str(media.get("url") or "").strip())
             if not url:
                 continue
             images.append(
@@ -218,7 +276,7 @@ def _serialize_digest(raw: dict) -> PublicDigestDocument:
 def site_meta(session: Session) -> PublicSiteMeta:
     latest = session.execute(
         select(DailyReport)
-        .where(DailyReport.publication_status == PublicationStatus.PUBLISHED.value)
+        .where(*_published_public_clause())
         .order_by(desc(DailyReport.report_date))
         .limit(1)
     ).scalar_one_or_none()
@@ -250,9 +308,11 @@ def _serialize_post(session: Session, post_id: str, run_id: str | None) -> Publi
     payload = post.payload if isinstance(post.payload, dict) else {}
     if payload.get("author_name"):
         author_name = str(payload["author_name"])
-    avatar = post.author_avatar_storage_url or post.author_avatar_source_url
-    if not avatar and payload.get("author_avatar_url"):
-        avatar = str(payload["author_avatar_url"])
+    avatar = _safe_public_asset_url(
+        post.author_avatar_storage_url
+        or post.author_avatar_source_url
+        or (str(payload["author_avatar_url"]) if payload.get("author_avatar_url") else None)
+    )
 
     hidden = post.visibility_status != VisibilityStatus.VISIBLE.value
     if hidden:
@@ -281,18 +341,21 @@ def _serialize_post(session: Session, post_id: str, run_id: str | None) -> Publi
         .order_by(PostMedia.position.asc())
     ).scalars().all()
 
-    media = [
-        PublicMediaItem(
-            type=m.media_type,
-            url=m.storage_url or m.source_url,
-            width=m.width,
-            height=m.height,
-            alt_text=m.alt_text or f"Image from @{post.handle}",
-            position=m.position,
+    media = []
+    for m in media_rows:
+        url = _safe_public_asset_url(m.storage_url)
+        if not url:
+            continue
+        media.append(
+            PublicMediaItem(
+                type=m.media_type,
+                url=url,
+                width=m.width,
+                height=m.height,
+                alt_text=m.alt_text or f"Image from @{post.handle}",
+                position=m.position,
+            )
         )
-        for m in media_rows
-        if m.storage_url or m.source_url
-    ]
 
     return PublicPostPayload(
         author_name=author_name,

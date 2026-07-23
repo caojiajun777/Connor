@@ -1,7 +1,7 @@
 import { KeywordChips } from "@/components/shared/KeywordChips";
 import { SignalMarker } from "@/components/shared/SignalMarker";
 import { SignalMeta } from "@/components/shared/SignalMeta";
-import { formatReportDateLong } from "@/lib/format";
+import { displayReportTitle, formatReportDateLong } from "@/lib/format";
 
 interface ReportHeaderProps {
   reportDate: string;
@@ -48,7 +48,7 @@ export function ReportHeader({
         {metaBits.join(" · ")}
       </time>
       <h1 className="type-headline anim-soft-rise delay-2 mx-auto mt-5 max-w-[820px] text-[34px] sm:text-[48px]">
-        {title}
+        {displayReportTitle(title)}
       </h1>
       {lead ? (
         <p className="type-lead-italic anim-soft-rise delay-3 mx-auto mt-5 max-w-[680px] text-[17px] sm:text-[19px]">

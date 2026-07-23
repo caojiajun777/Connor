@@ -26,12 +26,16 @@ def _cors_origins() -> list[str]:
     ]
     extra = os.environ.get("CONNOR_CORS_ORIGINS", "").strip()
     site = os.environ.get("CONNOR_PUBLIC_SITE_URL", "").strip().rstrip("/")
+    # Production: only the public site (+ explicit extras). Keep localhost for Console/dev.
     origins = list(defaults)
     if extra:
         origins.extend(o.strip() for o in extra.split(",") if o.strip())
     if site and site not in origins:
         origins.append(site)
-    # De-dupe, preserve order
+        if site.startswith("https://") and "://www." not in site:
+            www = site.replace("https://", "https://www.", 1)
+            if www not in origins:
+                origins.append(www)
     seen: set[str] = set()
     out: list[str] = []
     for o in origins:
@@ -61,9 +65,14 @@ def create_app(
     app.add_middleware(
         CORSMiddleware,
         allow_origins=_cors_origins(),
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=[
+            "Authorization",
+            "Content-Type",
+            "X-Connor-Ops-Key",
+            "Accept",
+        ],
     )
     app.include_router(create_console_router(factory))
     app.include_router(create_public_router(factory))
@@ -190,6 +199,29 @@ def create_app(
 
 
 def run_api(*, host: str = "127.0.0.1", port: int = 8080) -> None:
+    import sys
+
     import uvicorn
+
+    site = os.environ.get("CONNOR_PUBLIC_SITE_URL", "").strip().lower()
+    ops_key = os.environ.get("CONNOR_OPS_API_KEY", "").strip()
+    allow_insecure = os.environ.get("CONNOR_ALLOW_INSECURE_LOCAL", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    if (
+        site.startswith("https://")
+        and "127.0.0.1" not in site
+        and "localhost" not in site
+        and not ops_key
+        and not allow_insecure
+    ):
+        print(
+            "Refusing to start: CONNOR_PUBLIC_SITE_URL is public but CONNOR_OPS_API_KEY is unset.\n"
+            "Set CONNOR_OPS_API_KEY, or CONNOR_ALLOW_INSECURE_LOCAL=1 for local-only experiments.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
 
     uvicorn.run(create_app(), host=host, port=port)

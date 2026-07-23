@@ -24,10 +24,11 @@ from app.daily.enums import (
     ALL_REASON_CODES,
     DEFAULT_ANNOTATION_POLICY_VERSION,
     DEPRECATED_REASON_CODES,
+    EXCLUDE_REASON_CODES,
     HIDDEN_REASON_CODES,
-    UI_EXCLUDE_REASON_CODES,
+    INCLUDE_REASON_CODES,
     UI_EXCLUDE_REASON_ORDER,
-    UI_INCLUDE_REASON_CODES,
+    UI_HUMAN_LABELS,
     UI_INCLUDE_REASON_ORDER,
     AnnotationRunStatus,
     HumanLabel,
@@ -268,9 +269,10 @@ def annotation_meta() -> dict[str, Any]:
     """Console annotation vocabulary (single source of truth for UI)."""
     include = list(UI_INCLUDE_REASON_ORDER)
     exclude = list(UI_EXCLUDE_REASON_ORDER)
+    labels = list(UI_HUMAN_LABELS)
     return {
         "policy_version": DEFAULT_ANNOTATION_POLICY_VERSION,
-        "human_labels": [m.value for m in HumanLabel],
+        "human_labels": labels,
         "reason_codes": {
             "include": include,
             "exclude": exclude,
@@ -278,21 +280,19 @@ def annotation_meta() -> dict[str, Any]:
         "deprecated_reason_codes": sorted(DEPRECATED_REASON_CODES),
         "validation": {
             "reason_codes_min": 1,
-            "reason_codes_soft_max": 3,
+            "reason_codes_soft_max": 2,
             "other_requires_note": True,
-            "duplicate_requires_note": True,
         },
         "confidence": {"min": 0.0, "max": 1.0, "step": 0.05, "default": 0.8},
         # Backward-compatible aliases for older clients / fallbacks.
-        "labels": [m.value for m in HumanLabel],
+        "labels": labels,
         "include_reason_codes": include,
         "exclude_reason_codes": exclude,
         "hidden_reason_codes": sorted(HIDDEN_REASON_CODES),
         "reason_rules": {
             "include_exclude_min": 1,
-            "include_exclude_soft_max": 3,
+            "include_exclude_soft_max": 2,
             "other_requires_note": True,
-            "duplicate_requires_note": True,
         },
     }
 
@@ -428,7 +428,7 @@ def _validate_annotation_payload(
             )
 
     if human_label == HumanLabel.INCLUDE.value:
-        _codes_allowed_for_label(UI_INCLUDE_REASON_CODES)
+        _codes_allowed_for_label(INCLUDE_REASON_CODES)
         if not reason_codes:
             raise AnnotationError("reasons_required", "include requires at least one reason code")
         if "other" in reason_codes and not note_text:
@@ -436,7 +436,7 @@ def _validate_annotation_payload(
         return
 
     if human_label == HumanLabel.EXCLUDE.value:
-        _codes_allowed_for_label(UI_EXCLUDE_REASON_CODES)
+        _codes_allowed_for_label(EXCLUDE_REASON_CODES)
         if not reason_codes:
             raise AnnotationError("reasons_required", "exclude requires at least one reason code")
         if "other" in reason_codes and not note_text:
@@ -444,6 +444,7 @@ def _validate_annotation_payload(
         return
 
     if human_label in {HumanLabel.UNCERTAIN.value, HumanLabel.DUPLICATE.value}:
+        # Legacy labels: keep readable/editable for old rows, but Console UI no longer offers them.
         if reason_codes:
             raise AnnotationError(
                 "invalid_reason_codes",
@@ -504,6 +505,18 @@ def cancel_annotation_run(session: Session, annotation_run_id: str) -> dict[str,
     session.delete(annotation)
     session.flush()
     return {"cancelled": True, **payload}
+
+
+def purge_all_annotation_runs(session: Session) -> dict[str, int]:
+    """Delete every Console annotation run and item (does not touch production runs)."""
+    run_count = int(session.scalar(select(func.count()).select_from(AnnotationRun)) or 0)
+    item_count = int(session.scalar(select(func.count()).select_from(AnnotationItem)) or 0)
+    if run_count == 0:
+        return {"annotation_runs": 0, "annotation_items": 0}
+    session.execute(delete(AnnotationItem))
+    session.execute(delete(AnnotationRun))
+    session.flush()
+    return {"annotation_runs": run_count, "annotation_items": item_count}
 
 
 def purge_unsaved_annotation_runs(session: Session) -> int:

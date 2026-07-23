@@ -157,7 +157,7 @@ async def test_collect_empty_mcp_posts_retries_then_fails(sample_account, monkey
         window_start=datetime(2026, 7, 10, tzinfo=timezone.utc),
         window_end=datetime(2026, 7, 12, tzinfo=timezone.utc),
     )
-    assert calls["n"] == 3  # 1 + EMPTY_POSTS_MAX_RETRIES
+    assert calls["n"] == 2  # 1 + EMPTY_POSTS_MAX_RETRIES (default 1)
     assert batch.account_results[0].success is False
     assert batch.account_results[0].raw_count == 0
     assert batch.account_results[0].empty_window is False

@@ -7,7 +7,9 @@ export type ScrollDecision = {
 
 /**
  * After extracting posts on `pass` (0-based), decide whether to wheel+wait again.
- * Empty first screens return immediately — do not burn 12×700ms on dead profiles.
+ *
+ * Empty timelines often paint late under soft rate-limits. Allow one scroll on an
+ * empty first pass before declaring empty_first_screen (avoids burning 12×700ms).
  */
 export function nextScrollDecision(input: {
   pass: number;
@@ -20,6 +22,9 @@ export function nextScrollDecision(input: {
     return { continueScrolling: false, reason: "enough" };
   }
   if (input.pass === 0 && input.seenCount === 0) {
+    return { continueScrolling: true, reason: "scroll" };
+  }
+  if (input.pass >= 1 && input.seenCount === 0) {
     return { continueScrolling: false, reason: "empty_first_screen" };
   }
   if (input.pass + 1 >= maxPasses) {

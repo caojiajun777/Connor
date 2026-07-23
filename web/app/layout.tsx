@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+
+import { AnalyticsBeacon } from "@/components/shared/AnalyticsBeacon";
 
 import "./globals.css";
 
@@ -28,7 +31,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <Suspense fallback={null}>
+          <AnalyticsBeacon />
+        </Suspense>
+        {children}
+      </body>
     </html>
   );
 }

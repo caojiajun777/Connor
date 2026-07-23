@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass, field, replace
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from app.daily.eligibility import cursor_eligible_from_normalized
 from app.daily.enums import CollectionStatus
@@ -198,3 +199,77 @@ def _is_known_data_gap(
     if last_success_at is None:
         return False
     return _ensure_aware(last_success_at) < _ensure_aware(window_start)
+
+
+def shanghai_date_for_published(
+    published_at: str | None,
+    *,
+    tz_name: str = "Asia/Shanghai",
+) -> date | None:
+    published = parse_iso_datetime(published_at or "")
+    if published is None:
+        return None
+    published = _ensure_aware(published)
+    return published.astimezone(ZoneInfo(tz_name)).date()
+
+
+def apply_report_day_cursor_policy(
+    scan: AccountScanResult,
+    posts_newest_first: list[ScanPost],
+    *,
+    report_date: str,
+    tz_name: str = "Asia/Shanghai",
+) -> AccountScanResult:
+    """Keep only report-day increments; if none, mint cursor to the latest timeline tip.
+
+    Used when the daily run is pinned to a calendar day: accounts with no posts that
+    day should still advance the cursor to the newest seen post so later runs do not
+    keep re-chasing the full 72h window.
+    """
+    try:
+        day = date.fromisoformat(report_date.strip())
+    except ValueError:
+        return scan
+
+    day_increments = [
+        p
+        for p in scan.increments
+        if shanghai_date_for_published(p.published_at, tz_name=tz_name) == day
+    ]
+    if day_increments:
+        return replace(scan, increments=day_increments)
+
+    # No report-day posts: mint cursor to newest eligible tip, else newest seen card.
+    tip: ScanPost | None = None
+    for post in posts_newest_first:
+        if post.is_pinned:
+            continue
+        if post.cursor_eligible:
+            tip = post
+            break
+    if tip is None:
+        for post in posts_newest_first:
+            if post.is_pinned:
+                continue
+            tip = post
+            break
+    if tip is None:
+        return replace(scan, increments=[])
+
+    warning = scan.warning
+    note = f"minted_cursor_no_posts_on_{report_date}"
+    warning = f"{warning}; {note}" if warning else note
+    return replace(
+        scan,
+        increments=[],
+        collection_status=CollectionStatus.SUCCESS.value,
+        should_advance_cursor=True,
+        cursor_after_post_id=tip.post_id,
+        cursor_after_published_at=tip.published_at,
+        latest_seen_post_id=scan.latest_seen_post_id or tip.post_id,
+        latest_seen_published_at=scan.latest_seen_published_at or tip.published_at,
+        page_incomplete=False,
+        safety_limit_reached=False,
+        known_data_gap=False,
+        warning=warning,
+    )

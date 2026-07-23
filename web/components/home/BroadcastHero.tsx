@@ -11,7 +11,8 @@ import {
 
 import { padRank } from "@/lib/format";
 import type { HeroSlide } from "@/lib/hero-slides";
-import { smoothScrollTo } from "@/lib/smooth-scroll";
+import { pageTurnToReport } from "@/lib/page-turn";
+import { LiveBeijingDate } from "@/components/home/LiveBeijingDate";
 
 const HOLD_MS = 6500;
 const TRANSITION_MS = 900;
@@ -22,7 +23,6 @@ const MAX_CARDS = 8;
 type BroadcastHeroProps = {
   slides: HeroSlide[];
   latestHref: string | null;
-  reportDate: string | null;
 };
 
 function prefersReducedMotion(): boolean {
@@ -33,7 +33,6 @@ function prefersReducedMotion(): boolean {
 export function BroadcastHero({
   slides,
   latestHref,
-  reportDate,
 }: BroadcastHeroProps) {
   const hasSlides = slides.length > 0;
   const [active, setActive] = useState(0);
@@ -180,11 +179,10 @@ export function BroadcastHero({
           <h1 className="type-hero broadcast-title broadcast-brand-rise delay-title">
             Connor
           </h1>
-          {reportDate ? (
-            <p className="broadcast-date broadcast-brand-rise delay-sub">
-              {reportDate}
-            </p>
-          ) : null}
+          <LiveBeijingDate className="broadcast-date broadcast-brand-rise delay-sub" />
+          <p className="broadcast-schedule broadcast-brand-rise delay-sub">
+            北京时间每日 12:00 更新当日前沿 AI 日报
+          </p>
           <div className="broadcast-cta broadcast-brand-rise delay-cta">
             {latestHref ? (
               <Link
@@ -194,14 +192,8 @@ export function BroadcastHero({
                 onClick={
                   latestHref.startsWith("#")
                     ? (event) => {
-                        const id = latestHref.slice(1);
-                        const target = document.getElementById(id);
-                        if (!target) return;
                         event.preventDefault();
-                        smoothScrollTo(target, {
-                          hash: latestHref,
-                          duration: 1200,
-                        });
+                        pageTurnToReport({ hash: latestHref });
                       }
                     : undefined
                 }

@@ -405,3 +405,28 @@ class DailyReportItem(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     daily_report: Mapped[DailyReport] = relationship(back_populates="items")
+
+
+class AnalyticsEvent(Base):
+    """First-party public-site pageview / dwell events for Console analytics."""
+
+    __tablename__ = "analytics_events"
+    __table_args__ = (
+        Index("ix_analytics_events_occurred_at", "occurred_at"),
+        Index("ix_analytics_events_path_occurred", "path", "occurred_at"),
+        Index("ix_analytics_events_visitor_occurred", "visitor_id", "occurred_at"),
+        Index("ix_analytics_events_type_occurred", "event_type", "occurred_at"),
+    )
+
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=_uuid)
+    event_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    path: Mapped[str] = mapped_column(String(512), nullable=False, default="/")
+    visitor_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    session_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    dwell_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    referrer: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    ua_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

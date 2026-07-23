@@ -81,11 +81,19 @@ class AnnotationRunStatus(str, Enum):
 class HumanLabel(str, Enum):
     INCLUDE = "include"
     EXCLUDE = "exclude"
+    # Legacy labels retained so historical annotation_items still validate.
     UNCERTAIN = "uncertain"
     DUPLICATE = "duplicate"
 
 
-DEFAULT_ANNOTATION_POLICY_VERSION = "annotation-policy/v1"
+# Labels offered in Console Editorial UI (keep historical enum values above).
+UI_HUMAN_LABELS: tuple[str, ...] = (
+    HumanLabel.INCLUDE.value,
+    HumanLabel.EXCLUDE.value,
+)
+
+
+DEFAULT_ANNOTATION_POLICY_VERSION = "annotation-policy/v2"
 
 # Full allow-lists (including legacy codes retained for historical rows).
 EXCLUDE_REASON_CODES = frozenset(
@@ -119,30 +127,18 @@ INCLUDE_REASON_CODES = frozenset(
     }
 )
 
-# Ordered UI vocabularies (annotator judgement flow). Do not alphabetize.
+# Ordered UI vocabularies — keep short for fast annotator flow.
 UI_INCLUDE_REASON_ORDER: tuple[str, ...] = (
-    "major_release",
+    "frontier_signal",
     "important_product_update",
     "official_confirmation",
-    "high_information_gain",
-    "frontier_signal",
-    "market_impact",
-    "china_ai_significance",
-    "underestimated_by_model",
     "other",
 )
 
 UI_EXCLUDE_REASON_ORDER: tuple[str, ...] = (
     "low_information",
     "old_information",
-    "bare_repost",
-    "pure_promotion",
-    "weak_source",
-    "insufficient_evidence",
     "not_frontier",
-    "low_daily_relevance",
-    "too_niche",
-    "already_covered",
     "other",
 )
 

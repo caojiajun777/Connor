@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { pageTurnToHome } from "@/lib/page-turn";
 import { smoothScrollTo } from "@/lib/smooth-scroll";
 
 export function SiteNav() {
@@ -18,10 +19,15 @@ export function SiteNav() {
         onClick={
           onHome
             ? (event) => {
+                event.preventDefault();
+                const root = document.documentElement;
+                if (root.classList.contains("home-report-active")) {
+                  pageTurnToHome({ hash: "#home" });
+                  return;
+                }
                 const target = document.getElementById("home");
                 if (!target) return;
-                event.preventDefault();
-                smoothScrollTo(target, { hash: "#home", duration: 1200 });
+                smoothScrollTo(target, { hash: "#home", duration: 900 });
               }
             : undefined
         }

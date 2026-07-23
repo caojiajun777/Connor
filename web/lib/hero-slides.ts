@@ -78,9 +78,9 @@ function collectFromReport(report: PublicReportDetail): Candidate[] {
 }
 
 /**
- * Build a Hero playlist from recent report details (latest-first).
- * Round-robins across reports so the last N days all contribute frames
- * instead of filling the reel from only the newest day.
+ * Build a Hero playlist from recent report details.
+ * Plays day blocks in order: today → yesterday → day before…
+ * (within each day: digest rank / post order). Not interleaved / random.
  */
 export function extractHeroSlides(
   reports: PublicReportDetail[],
@@ -89,34 +89,23 @@ export function extractHeroSlides(
   const maxSlides = options?.maxSlides ?? 12;
   if (!reports.length || maxSlides <= 0) return [];
 
-  const pools = reports.map(collectFromReport).filter((p) => p.length > 0);
-  if (!pools.length) return [];
+  const sorted = [...reports].sort((a, b) =>
+    b.report_date.localeCompare(a.report_date),
+  );
 
   const slides: HeroSlide[] = [];
   const seen = new Set<string>();
-  const cursors = pools.map(() => 0);
-  let guard = 0;
-  const guardMax = maxSlides * pools.length * 2;
 
-  while (slides.length < maxSlides && guard < guardMax) {
-    guard += 1;
-    let progressed = false;
-    for (let i = 0; i < pools.length && slides.length < maxSlides; i += 1) {
-      const pool = pools[i];
-      while (cursors[i] < pool.length) {
-        const candidate = pool[cursors[i]];
-        cursors[i] += 1;
-        if (seen.has(candidate.url)) continue;
-        seen.add(candidate.url);
-        slides.push({
-          ...candidate,
-          signalIndex: slides.length + 1,
-        });
-        progressed = true;
-        break;
-      }
+  for (const report of sorted) {
+    for (const candidate of collectFromReport(report)) {
+      if (seen.has(candidate.url)) continue;
+      seen.add(candidate.url);
+      slides.push({
+        ...candidate,
+        signalIndex: slides.length + 1,
+      });
+      if (slides.length >= maxSlides) return slides;
     }
-    if (!progressed) break;
   }
 
   return slides;

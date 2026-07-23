@@ -56,6 +56,11 @@ export function postIdFromUrl(url: string): string | null {
   return match?.[1] ?? null;
 }
 
+/** Show “AI 日报 …” even for older published “AI 早报 …” titles. */
+export function displayReportTitle(title: string): string {
+  return title.replace(/AI\s*早报/g, "AI 日报");
+}
+
 /** "OpenAI, Anthropic +2" style handle summary. */
 export function summarizeHandles(
   handles: string[],

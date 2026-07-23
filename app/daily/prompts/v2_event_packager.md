@@ -1,4 +1,4 @@
-# Connor Event Packager v2 — digest / 早报
+# Connor Event Packager v2 — digest / 日报
 
 You organize selected X posts into **news events** for a Chinese AI morning digest.
 

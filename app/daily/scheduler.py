@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from datetime import datetime, time, timezone
+from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 
@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 class ScheduleConfig:
     """Cron-friendly daily window. Designed for external cron calling `daily tick`."""
 
-    hour: int = 6
+    hour: int = 8
     minute: int = 0
     timezone: str = "Asia/Shanghai"
     enabled: bool = True
@@ -18,7 +18,7 @@ class ScheduleConfig:
     @classmethod
     def from_env(cls) -> ScheduleConfig:
         return cls(
-            hour=int(os.environ.get("CONNOR_SCHEDULE_HOUR", "6")),
+            hour=int(os.environ.get("CONNOR_SCHEDULE_HOUR", "8")),
             minute=int(os.environ.get("CONNOR_SCHEDULE_MINUTE", "0")),
             timezone=os.environ.get("CONNOR_SCHEDULE_TZ", "Asia/Shanghai"),
             enabled=os.environ.get("CONNOR_SCHEDULE_ENABLED", "1").strip().lower()
@@ -57,3 +57,50 @@ def cron_expression(cfg: ScheduleConfig | None = None) -> str:
     cfg = cfg or ScheduleConfig.from_env()
     # Standard 5-field cron (min hour dom mon dow)
     return f"{cfg.minute} {cfg.hour} * * *"
+
+
+def publish_deadline_enabled() -> bool:
+    return os.environ.get("CONNOR_PUBLISH_DEADLINE_ENABLED", "1").strip().lower() not in {
+        "0",
+        "false",
+        "off",
+        "no",
+    }
+
+
+def publish_deadline_collect_cutoff(
+    cfg: ScheduleConfig | None = None,
+    *,
+    now: datetime | None = None,
+) -> datetime | None:
+    """Latest local time to keep retrying collects before write/publish must start."""
+    if not publish_deadline_enabled():
+        return None
+    cfg = cfg or ScheduleConfig.from_env()
+    hour = int(os.environ.get("CONNOR_PUBLISH_DEADLINE_HOUR", "12"))
+    minute = int(os.environ.get("CONNOR_PUBLISH_DEADLINE_MINUTE", "0"))
+    reserve_min = max(0, int(os.environ.get("CONNOR_PUBLISH_DEADLINE_RESERVE_MIN", "90")))
+    current = _as_local(now or local_now(cfg), cfg)
+    deadline = datetime.combine(
+        current.date(), time(hour, minute), tzinfo=ZoneInfo(cfg.timezone)
+    )
+    return deadline - timedelta(minutes=reserve_min)
+
+
+def collect_retry_past_deadline(
+    cfg: ScheduleConfig | None = None,
+    *,
+    now: datetime | None = None,
+) -> bool:
+    cutoff = publish_deadline_collect_cutoff(cfg, now=now)
+    if cutoff is None:
+        return False
+    cfg = cfg or ScheduleConfig.from_env()
+    return _as_local(now or local_now(cfg), cfg) >= cutoff
+
+
+def _as_local(current: datetime, cfg: ScheduleConfig) -> datetime:
+    tz = ZoneInfo(cfg.timezone)
+    if current.tzinfo is None:
+        return current.replace(tzinfo=tz)
+    return current.astimezone(tz)

@@ -4,10 +4,11 @@
 
 param(
     [string]$TaskName = "ConnorDailyPublish",
-    # Primary wake slot. Launcher + Redis wait cover Docker Desktop cold start after wake.
+    # Pipeline starts 06:00 Asia/Shanghai so collect + retry finish before the
+    # public 12:00 publish promise (retry stops ~10:30, write/publish by noon).
     [string]$At = "06:00",
     [string]$CatchUpAt = "07:00",
-    [string]$LateCatchUpAt = "09:00"
+    [string]$LateCatchUpAt = "08:30"
 )
 
 $ErrorActionPreference = "Stop"
@@ -32,8 +33,8 @@ $action = New-ScheduledTaskAction `
     -Argument ("-NoProfile -ExecutionPolicy Bypass -File `"{0}`"" -f $Launcher) `
     -WorkingDirectory $RepoRoot
 
-# Primary 06:00 + morning catch-ups (idempotent if already published)
-# + logon catch-up if the overnight wake was missed entirely.
+# Primary 08:00 + morning catch-ups (idempotent if already published)
+# + logon catch-up if the machine was off / asleep at 08:00.
 # Settle time after Modern Standby wake is handled in the launcher / ensure_redis.
 $daily = New-ScheduledTaskTrigger -Daily -At $At
 $catchUp = New-ScheduledTaskTrigger -Daily -At $CatchUpAt
@@ -46,7 +47,7 @@ $settings = New-ScheduledTaskSettingsSet `
     -DontStopIfGoingOnBatteries `
     -StartWhenAvailable `
     -WakeToRun `
-    -ExecutionTimeLimit (New-TimeSpan -Hours 3) `
+    -ExecutionTimeLimit (New-TimeSpan -Hours 6) `
     -MultipleInstances IgnoreNew `
     -RestartCount 2 `
     -RestartInterval (New-TimeSpan -Minutes 5) `
@@ -66,7 +67,7 @@ Register-ScheduledTask `
     -Trigger @($daily, $catchUp, $late, $logon) `
     -Settings $settings `
     -Principal $principal `
-    -Description "Connor AI morning digest: live collect → write → publish (Asia/Shanghai). Triggers: $At, $CatchUpAt, $LateCatchUpAt, and ~3min after logon." `
+    -Description "Connor daily collect→write→publish (Asia/Shanghai 06:00). Retry stops by ~10:30 for 12:00 publish. Triggers: $At, $CatchUpAt, $LateCatchUpAt, AtLogOn+3m." `
     -Force | Out-Null
 
 $task = Get-ScheduledTask -TaskName $TaskName
@@ -82,9 +83,12 @@ Write-Host ("  Launcher:     {0}" -f $Launcher)
 Write-Host ("  Triggers:     {0}, {1}, {2}, AtLogOn+3m" -f $At, $CatchUpAt, $LateCatchUpAt)
 Write-Host ""
 Write-Host "Notes:"
-Write-Host "  - Leave the PC in Sleep/Standby overnight (not fully powered off)."
-Write-Host "  - Stay logged into this Windows account (browser collect needs the session)."
+Write-Host "  - Pipeline target: Asia/Shanghai 06:00 start; publish deadline 12:00 (retry stops ~10:30)."
+Write-Host "  - If the PC was off/asleep: StartWhenAvailable + AtLogOn(~3m) will catch up."
+Write-Host "  - Prefer Sleep/Standby over full shutdown when possible; stay logged in for browser collect."
 Write-Host "  - Docker Desktop should start with Windows so Redis (task-redis) can come up."
 Write-Host "  - Already-published days are skipped; catch-up triggers are safe to fire."
+Write-Host "  - Launcher passes --split-by-day --accept-gap; auto-retry stops at publish deadline."
+Write-Host "  - Task time limit: 6h (06:00 collect → ~10:30 retry cutoff → write/publish by 12:00)."
 Write-Host "  - Manual test:  schtasks /Run /TN $TaskName"
 Write-Host "  - Or:          powershell -File `"$Launcher`" -SkipDeps   # or without -SkipDeps"

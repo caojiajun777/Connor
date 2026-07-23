@@ -4,6 +4,30 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def load_project_dotenv(*, override: bool = False) -> None:
+    """Load KEY=VALUE pairs from repo-root `.env` (gitignored).
+
+    Scheduled tasks often inherit an incomplete environment; fill missing keys
+    from `.env` without clobbering explicit process / user variables.
+    """
+    env_path = ROOT / ".env"
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding="utf-8-sig").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            continue
+        key, value = stripped.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip("'").strip('"')
+        if not key:
+            continue
+        if override or key not in os.environ:
+            os.environ[key] = value
+
 
 @dataclass(frozen=True)
 class DailySettings:

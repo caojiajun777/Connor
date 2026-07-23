@@ -129,7 +129,24 @@ def _seed_run_with_posts(session, *, suffix: str | None = None) -> tuple[str, li
 
 def _unique_report_date(month: int) -> str:
     day = (int(uuid4().hex[:2], 16) % 28) + 1
-    return f"2199-{month:02d}-{day:02d}"
+    # Stay inside the public archive year window so API assertions remain valid,
+    # but use a sparse past year and always purge after the test.
+    return f"2018-{month:02d}-{day:02d}"
+
+
+def _purge_report_by_date(session, report_date: str) -> None:
+    from sqlalchemy import delete
+
+    report = session.execute(
+        select(DailyReport).where(DailyReport.report_date == report_date)
+    ).scalar_one_or_none()
+    if report is None:
+        return
+    session.execute(
+        delete(DailyReportItem).where(DailyReportItem.daily_report_id == report.id)
+    )
+    session.execute(delete(DailyReport).where(DailyReport.id == report.id))
+    session.commit()
 
 
 def _attach_writer_fields(report: DailyReport, post_ids: list[str] | None = None) -> None:
@@ -160,105 +177,111 @@ def _attach_writer_fields(report: DailyReport, post_ids: list[str] | None = None
 def test_public_list_only_published(db) -> None:
     run_id, post_ids = _seed_run_with_posts(db)
     report_date = _unique_report_date(2)
-    draft = pub.create_draft_from_selection(
-        db,
-        source_run_id=run_id,
-        report_date=report_date,
-        title="Draft only",
-        overview="Should not appear",
-        keywords=["x"],
-    )
-    _attach_writer_fields(draft, post_ids)
-    db.commit()
+    try:
+        draft = pub.create_draft_from_selection(
+            db,
+            source_run_id=run_id,
+            report_date=report_date,
+            title="Draft only",
+            overview="Should not appear",
+            keywords=["x"],
+        )
+        _attach_writer_fields(draft, post_ids)
+        db.commit()
 
-    settings = DailySettings.from_env()
-    client = TestClient(create_app(settings, skip_schema_init=False))
-    listed = client.get("/api/public/reports").json()["items"]
-    assert all(i["report_date"] != report_date for i in listed)
-    assert client.get(f"/api/public/reports/{report_date}").status_code == 404
+        settings = DailySettings.from_env()
+        client = TestClient(create_app(settings, skip_schema_init=False))
+        listed = client.get("/api/public/reports").json()["items"]
+        assert all(i["report_date"] != report_date for i in listed)
+        assert client.get(f"/api/public/reports/{report_date}").status_code == 404
 
-    pub.publish_report(db, draft.id, download_media=False, accept_partial_media=True)
-    db.commit()
-    listed = client.get("/api/public/reports").json()["items"]
-    assert any(i["report_date"] == report_date and i["title"] == "Draft only" for i in listed)
-    detail = client.get(f"/api/public/reports/{report_date}").json()
-    assert detail["item_count"] == 2
-    assert detail["items"][0]["display_order"] == 1
-    assert "importance_score" not in str(detail)
-    assert "selection_reason" not in str(detail)
-    assert detail["items"][0]["post"]["text_translated"]
-    assert detail["lead"]
-    assert detail["body_sections"]
-    assert detail["body_sections"][0]["paragraphs"]
-
-    # cleanup published so other tests stay clean-ish
-    pub.withdraw_report(db, draft.id)
-    db.commit()
+        pub.publish_report(db, draft.id, download_media=False, accept_partial_media=True)
+        db.commit()
+        listed = client.get("/api/public/reports").json()["items"]
+        assert any(i["report_date"] == report_date and i["title"] == "Draft only" for i in listed)
+        detail = client.get(f"/api/public/reports/{report_date}").json()
+        assert detail["item_count"] == 2
+        assert detail["items"][0]["display_order"] == 1
+        assert "importance_score" not in str(detail)
+        assert "selection_reason" not in str(detail)
+        assert detail["items"][0]["post"]["text_translated"]
+        assert detail["lead"]
+        assert detail["body_sections"]
+        assert detail["body_sections"][0]["paragraphs"]
+    finally:
+        _purge_report_by_date(db, report_date)
 
 
 def test_hidden_post_redacts_content(db) -> None:
     run_id, post_ids = _seed_run_with_posts(db)
     report_date = _unique_report_date(3)
-    report = pub.create_draft_from_selection(
-        db,
-        source_run_id=run_id,
-        report_date=report_date,
-        title="Hide test",
-        overview="Overview text for hide test case with enough length.",
-    )
-    _attach_writer_fields(report, post_ids)
-    pub.publish_report(db, report.id, download_media=False, accept_partial_media=True)
-    pub.hide_post(db, post_ids[0])
-    db.commit()
+    try:
+        report = pub.create_draft_from_selection(
+            db,
+            source_run_id=run_id,
+            report_date=report_date,
+            title="Hide test",
+            overview="Overview text for hide test case with enough length.",
+        )
+        _attach_writer_fields(report, post_ids)
+        pub.publish_report(db, report.id, download_media=False, accept_partial_media=True)
+        pub.hide_post(db, post_ids[0])
+        db.commit()
 
-    client = TestClient(create_app(DailySettings.from_env(), skip_schema_init=False))
-    detail = client.get(f"/api/public/reports/{report_date}").json()
-    first = detail["items"][0]["post"]
-    assert first["unavailable"] is True
-    assert first["text_original"] == ""
-    assert first["media"] == []
-    assert first["original_url"]
-    assert first["author_handle"]
-    pub.withdraw_report(db, report.id)
-    db.commit()
+        client = TestClient(create_app(DailySettings.from_env(), skip_schema_init=False))
+        detail = client.get(f"/api/public/reports/{report_date}").json()
+        first = detail["items"][0]["post"]
+        assert first["unavailable"] is True
+        assert first["text_original"] == ""
+        assert first["media"] == []
+        assert first["original_url"]
+        assert first["author_handle"]
+    finally:
+        _purge_report_by_date(db, report_date)
 
 
 def test_publish_requires_title_and_translation(db) -> None:
     run_id, post_ids = _seed_run_with_posts(db)
     report_date = _unique_report_date(4)
-    report = DailyReport(
-        report_date=report_date,
-        title="",
-        overview="overview",
-        keywords=[],
-        publication_status=PublicationStatus.UNPUBLISHED.value,
-        source_run_id=run_id,
-    )
-    db.add(report)
-    db.flush()
-    db.add(DailyReportItem(daily_report_id=report.id, post_id=post_ids[0], display_order=1))
-    _attach_writer_fields(report, post_ids[:1])
-    db.commit()
-    with pytest.raises(pub.PublishError) as err:
-        pub.publish_report(db, report.id, download_media=False, accept_partial_media=True)
-    assert err.value.code == "validation_failed"
+    try:
+        report = DailyReport(
+            report_date=report_date,
+            title="",
+            overview="overview",
+            keywords=[],
+            publication_status=PublicationStatus.UNPUBLISHED.value,
+            source_run_id=run_id,
+        )
+        db.add(report)
+        db.flush()
+        db.add(DailyReportItem(daily_report_id=report.id, post_id=post_ids[0], display_order=1))
+        _attach_writer_fields(report, post_ids[:1])
+        db.commit()
+        with pytest.raises(pub.PublishError) as err:
+            pub.publish_report(db, report.id, download_media=False, accept_partial_media=True)
+        assert err.value.code == "validation_failed"
+    finally:
+        _purge_report_by_date(db, report_date)
 
 
 def test_publish_requires_writer_body(db) -> None:
     run_id, _post_ids = _seed_run_with_posts(db)
     report_date = _unique_report_date(6)
-    report = pub.create_draft_from_selection(
-        db,
-        source_run_id=run_id,
-        report_date=report_date,
-        title="Missing writer fields",
-        overview="Lead text is present but packaged narrative is not.",
-    )
-    db.commit()
-    with pytest.raises(pub.PublishError) as err:
-        pub.publish_report(db, report.id, download_media=False, accept_partial_media=True)
-    assert err.value.code == "validation_failed"
-    assert "body_sections" in err.value.message or "event_packages" in err.value.message
+    try:
+        report = pub.create_draft_from_selection(
+            db,
+            source_run_id=run_id,
+            report_date=report_date,
+            title="Missing writer fields",
+            overview="Lead text is present but packaged narrative is not.",
+        )
+        db.commit()
+        with pytest.raises(pub.PublishError) as err:
+            pub.publish_report(db, report.id, download_media=False, accept_partial_media=True)
+        assert err.value.code == "validation_failed"
+        assert "body_sections" in err.value.message or "event_packages" in err.value.message
+    finally:
+        _purge_report_by_date(db, report_date)
 
 
 def test_media_download_idempotent(tmp_path: Path, db, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -313,25 +336,26 @@ def test_media_download_idempotent(tmp_path: Path, db, monkeypatch: pytest.Monke
 def test_published_report_not_silently_editable(db) -> None:
     run_id, _ = _seed_run_with_posts(db)
     day = (int(uuid4().hex[:2], 16) % 28) + 1
-    report_date = f"2099-05-{day:02d}"
-    report = pub.create_draft_from_selection(
-        db,
-        source_run_id=run_id,
-        report_date=report_date,
-        title="Immutable",
-        overview="Published reports must not be replaced in place without withdraw.",
-    )
-    _attach_writer_fields(report)
-    pub.publish_report(db, report.id, download_media=False, accept_partial_media=True)
-    db.commit()
-    with pytest.raises(pub.PublishError) as err:
-        pub.create_draft_from_selection(
+    report_date = f"2018-05-{day:02d}"
+    try:
+        report = pub.create_draft_from_selection(
             db,
             source_run_id=run_id,
             report_date=report_date,
-            title="Nope",
-            overview="x" * 20,
+            title="Immutable",
+            overview="Published reports must not be replaced in place without withdraw.",
         )
-    assert err.value.code == "already_published"
-    pub.withdraw_report(db, report.id)
-    db.commit()
+        _attach_writer_fields(report)
+        pub.publish_report(db, report.id, download_media=False, accept_partial_media=True)
+        db.commit()
+        with pytest.raises(pub.PublishError) as err:
+            pub.create_draft_from_selection(
+                db,
+                source_run_id=run_id,
+                report_date=report_date,
+                title="Nope",
+                overview="x" * 20,
+            )
+        assert err.value.code == "already_published"
+    finally:
+        _purge_report_by_date(db, report_date)

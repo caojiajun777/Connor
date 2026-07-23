@@ -14,7 +14,7 @@ from app.daily.checkpoint import (
     create_postgres_checkpointer,
     setup_checkpointer,
 )
-from app.daily.collect_loop import run_collect_accounts_loop
+from app.daily.collect_loop import CollectLoopResult, run_collect_accounts_loop
 from app.daily.collect_order import apply_collect_deferrals, sort_accounts_for_collect
 from app.daily.config import DailySettings
 from app.daily.db import create_db_engine, create_session_factory, init_schema
@@ -25,6 +25,7 @@ from app.daily.graph import build_daily_graph
 from app.daily.import_cursors import create_run_row
 from app.daily.metrics import build_metrics_from_state, emit_metrics, maybe_alert
 from app.daily.redis_cursors import RedisCursorStore, connect_redis
+from app.daily.retry_failed_collect import auto_retry_enabled, retry_failed_collect
 from app.daily.selection_phase import run_m3d_selection_phase
 from app.daily.summary_phase import run_m3c_summary_phase
 from app.editorial.llm_client import LLMSettings, OpenAICompatibleClient
@@ -163,6 +164,12 @@ class DailyProductionRuntime:
             if not dry_run:
                 collect_loop_result = self._run_live_collect(
                     run_id, accept_gap=accept_gap, accept_partial=accept_partial
+                )
+                collect_loop_result = self._drain_failed_collects(
+                    run_id,
+                    collect_loop_result,
+                    accept_gap=accept_gap,
+                    accept_partial=accept_partial,
                 )
                 if not collect_loop_result.get("collection_complete"):
                     return self._finish_paused(
@@ -437,18 +444,85 @@ class DailyProductionRuntime:
             if lock is not None:
                 lock.release()
 
+    def _drain_failed_collects(
+        self,
+        run_id: str,
+        collect_loop_result: dict[str, Any],
+        *,
+        accept_gap: bool,
+        accept_partial: bool,
+    ) -> dict[str, Any]:
+        """After the main pass, cool down and retry failures every N minutes until clear."""
+        if collect_loop_result.get("fatal_error"):
+            return collect_loop_result
+        if not auto_retry_enabled():
+            return collect_loop_result
+
+        failed = list(collect_loop_result.get("failed_handles") or [])
+        if not failed and collect_loop_result.get("collection_complete"):
+            return collect_loop_result
+
+        print(
+            f"auto-retry: main collect finished with {len(failed)} failed account(s); "
+            "evaluating cool-down / retry"
+        )
+        drain = retry_failed_collect(
+            run_id=run_id,
+            accept_gap=accept_gap,
+            accept_partial=True,
+            until_done=True,
+            wait_before_first=True,
+            include_missing=True,
+            runtime=self,
+        )
+        # Nothing left to retry (e.g. only non-retryable pause reasons / below threshold).
+        if not drain.handles and not drain.passes:
+            merged = dict(collect_loop_result)
+            merged["auto_retry"] = drain.to_dict()
+            merged["failed_handles"] = list(drain.remaining_failed)
+            # Accept small residual / not-worth failures and continue pipeline.
+            if drain.stop_reason in {"cleared", "below_threshold", "not_worth_retry", "publish_deadline"}:
+                merged["collection_complete"] = True
+                merged["paused_reason"] = None
+            return merged
+
+        merged = dict(collect_loop_result)
+        merged["auto_retry"] = drain.to_dict()
+        merged["failed_handles"] = list(drain.remaining_failed)
+        if drain.ok or drain.stop_reason in {
+            "cleared",
+            "below_threshold",
+            "not_worth_retry",
+            "publish_deadline",
+        }:
+            merged["collection_complete"] = True
+            merged["paused_reason"] = None
+            merged["fatal_error"] = None
+        else:
+            merged["collection_complete"] = False
+            if drain.error and "still failed" not in (drain.error or ""):
+                merged["fatal_error"] = drain.error
+                merged["paused_reason"] = f"fatal_session:{drain.error}"
+            else:
+                merged["paused_reason"] = "auto_retry_exhausted:" + ",".join(
+                    drain.remaining_failed[:40]
+                )
+        return merged
+
     def _run_live_collect(
         self,
         run_id: str,
         *,
         accept_gap: bool,
         accept_partial: bool = False,
+        handles: list[str] | None = None,
+        replace_account_runs: bool = False,
     ) -> dict[str, Any]:
-        """MCP incremental collect for all enabled watchlist accounts."""
+        """MCP incremental collect for enabled watchlist accounts (optional handle subset)."""
         config = load_watchlist(Path(self.settings.watchlist_path))
         accounts = sort_accounts_for_collect(
             apply_collect_deferrals(
-                filter_accounts(config, handles=None, enabled_only=True)
+                filter_accounts(config, handles=handles, enabled_only=True)
             )
         )
 
@@ -468,8 +542,18 @@ class DailyProductionRuntime:
                 "continuing without cursor sync"
             )
 
-        async def _collect_with_client() -> Any:
+        async def _collect_with_client() -> CollectLoopResult:
             async with XNewsMCPClient() as mcp:
+                status = await mcp.session_status()
+                if not status.get("authenticated"):
+                    reason_code = str(status.get("reason_code") or "login_required")
+                    reason = str(status.get("reason") or "X session is not authenticated")
+                    return CollectLoopResult(
+                        collection_complete=False,
+                        cursor_sync_complete=False,
+                        paused_reason=f"fatal_session:{reason_code}",
+                        fatal_error=reason,
+                    )
                 return await run_collect_accounts_loop(
                     client=mcp,
                     accounts=accounts,
@@ -479,6 +563,7 @@ class DailyProductionRuntime:
                     accept_gap=accept_gap,
                     accept_partial=accept_partial,
                     sync_redis=sync_redis,
+                    replace_account_runs=replace_account_runs,
                 )
 
         result = asyncio.run(_collect_with_client())
@@ -499,6 +584,7 @@ class DailyProductionRuntime:
             "paused_reason": result.paused_reason,
             "fatal_error": result.fatal_error,
             "account_statuses": account_statuses,
+            "failed_handles": list(result.failed_handles),
             "new_post_count": new_post_count,
             "persist_count": len(result.persist_results),
             "outbox_sync": result.outbox_sync,

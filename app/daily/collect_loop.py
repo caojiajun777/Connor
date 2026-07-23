@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -26,6 +27,9 @@ TERMINAL_BLOCKING = {
     CollectionStatus.FAILED_PERMANENT.value,
 }
 
+# Fail-forward pacing: keep the main pass fast; retry failures in a later round.
+_ACCOUNT_PAUSE_MS = int(os.environ.get("CONNOR_COLLECT_ACCOUNT_PAUSE_MS", "1000"))
+
 
 @dataclass
 class CollectLoopResult:
@@ -36,6 +40,7 @@ class CollectLoopResult:
     cursor_sync_complete: bool = False
     paused_reason: str | None = None
     fatal_error: str | None = None
+    failed_handles: list[str] = field(default_factory=list)
 
 
 async def run_collect_accounts_loop(
@@ -49,11 +54,15 @@ async def run_collect_accounts_loop(
     now: datetime | None = None,
     sync_redis: bool = True,
     accept_partial: bool = False,
+    replace_account_runs: bool = False,
 ) -> CollectLoopResult:
     """Per-account: load cursor → collect → PG commit → optional Redis outbox sync."""
     result = CollectLoopResult()
 
-    for account in accounts:
+    for index, account in enumerate(accounts):
+        if index > 0 and _ACCOUNT_PAUSE_MS > 0:
+            await asyncio.sleep(_ACCOUNT_PAUSE_MS / 1000)
+
         with session_factory() as session:
             try:
                 cursor = load_account_cursor(cursor_store, session, account.handle)
@@ -86,6 +95,7 @@ async def run_collect_accounts_loop(
                         posts=outcome.normalized_posts,
                         scan=outcome.scan,
                         cursor_before=cursor,
+                        replace_existing=replace_account_runs,
                     )
                     session.commit()
                     result.persist_results.append(persist_info)
@@ -108,6 +118,7 @@ async def run_collect_accounts_loop(
                         posts=[],
                         scan=outcome.scan,
                         cursor_before=cursor,
+                        replace_existing=replace_account_runs,
                     )
                     session.commit()
                     result.persist_results.append(persist_info)
@@ -154,15 +165,29 @@ async def run_collect_accounts_loop(
         result.cursor_sync_complete = True
 
     blocking = []
+    soft_skipped: list[str] = []
     for outcome in result.account_outcomes:
         status = outcome.scan.collection_status if outcome.scan else CollectionStatus.FAILED_RETRYABLE.value
+        if status in {
+            CollectionStatus.FAILED_RETRYABLE.value,
+            CollectionStatus.FAILED_PERMANENT.value,
+        }:
+            result.failed_handles.append(outcome.handle)
         if status in TERMINAL_BLOCKING:
             if status == CollectionStatus.KNOWN_DATA_GAP.value and accept_gap:
                 continue
             # Soft-fail empty/transient accounts when operator accepts partial coverage.
             if status == CollectionStatus.FAILED_RETRYABLE.value and accept_partial:
+                soft_skipped.append(outcome.handle)
                 continue
             blocking.append(f"{outcome.handle}:{status}")
+
+    if soft_skipped:
+        print(
+            f"accept_partial soft-skipped {len(soft_skipped)} account(s): "
+            + ",".join(soft_skipped[:20])
+            + ("..." if len(soft_skipped) > 20 else "")
+        )
 
     if result.fatal_error:
         result.collection_complete = False
@@ -171,6 +196,14 @@ async def run_collect_accounts_loop(
         result.paused_reason = "blocking_accounts:" + ",".join(blocking)
     else:
         result.collection_complete = True
+
+    if result.failed_handles:
+        print("failed_handles_for_retry=" + ",".join(result.failed_handles))
+        print(
+            f"collect finished with {len(result.failed_handles)} failed account(s); "
+            "retry later with: python scripts/retry_failed_collect.py --run-id "
+            f"{run_id}"
+        )
 
     return result
 

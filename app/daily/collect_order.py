@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import os
+from collections import defaultdict, deque
 
 from app.x_watchlist.schemas import SourceType, XSourceAccount
 
 _PRIORITY_RANK = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
 
-# Official / product / leak first (leaks are high-signal and were getting starved
-# when collected last after long browser sessions), then analysts, employees last.
+# Preferred source order within a priority band. We round-robin across these
+# buckets so analysts/leaks are not starved at the end of a long serial crawl.
 _SOURCE_RANK = {
     SourceType.OFFICIAL.value: 0,
     SourceType.PRODUCT_SIGNAL.value: 1,
@@ -23,15 +24,24 @@ _SOURCE_RANK = {
 
 
 def sort_accounts_for_collect(accounts: list[XSourceAccount]) -> list[XSourceAccount]:
-    """P0 → P1, official → analyst → employee, then handle."""
-    return sorted(
-        accounts,
-        key=lambda a: (
-            _PRIORITY_RANK.get((a.priority or "P1").upper(), 9),
-            _SOURCE_RANK.get(a.source_type, 9),
-            a.handle.lower(),
-        ),
-    )
+    """P0 → P1, then round-robin source types (official → … → employee)."""
+    by_priority: dict[int, list[XSourceAccount]] = defaultdict(list)
+    for account in accounts:
+        priority = _PRIORITY_RANK.get((account.priority or "P1").upper(), 9)
+        by_priority[priority].append(account)
+
+    ordered: list[XSourceAccount] = []
+    for priority in sorted(by_priority):
+        buckets: dict[int, deque[XSourceAccount]] = defaultdict(deque)
+        for account in sorted(by_priority[priority], key=lambda a: a.handle.lower()):
+            rank = _SOURCE_RANK.get(account.source_type, 9)
+            buckets[rank].append(account)
+        ranks = sorted(buckets)
+        while any(buckets[r] for r in ranks):
+            for rank in ranks:
+                if buckets[rank]:
+                    ordered.append(buckets[rank].popleft())
+    return ordered
 
 
 def deferred_source_types_from_env() -> set[str]:

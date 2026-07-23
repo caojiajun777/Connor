@@ -45,7 +45,8 @@ def _raw(post_id: str, hours_ago: float, *, now: datetime, social_context: str |
 
 
 @pytest.mark.asyncio
-async def test_collect_one_account_stops_at_cursor() -> None:
+async def test_collect_one_account_stops_at_cursor(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("CONNOR_COLLECT_REPORT_DATE", raising=False)
     now = datetime(2026, 7, 13, 12, 0, tzinfo=timezone.utc)
     client = FakeMCP(
         [
@@ -82,7 +83,10 @@ async def test_collect_one_account_stops_at_cursor() -> None:
 
 
 @pytest.mark.asyncio
-async def test_collect_includes_repost_but_cursor_from_original() -> None:
+async def test_collect_includes_repost_but_cursor_from_original(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("CONNOR_COLLECT_REPORT_DATE", raising=False)
     now = datetime(2026, 7, 13, 12, 0, tzinfo=timezone.utc)
     client = FakeMCP(
         [

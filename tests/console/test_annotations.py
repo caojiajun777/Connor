@@ -434,8 +434,8 @@ def test_annotation_meta_matches_enums() -> None:
         DEFAULT_ANNOTATION_POLICY_VERSION,
         DEPRECATED_REASON_CODES,
         UI_EXCLUDE_REASON_ORDER,
+        UI_HUMAN_LABELS,
         UI_INCLUDE_REASON_ORDER,
-        HumanLabel,
     )
 
     settings = DailySettings.from_env()
@@ -444,15 +444,24 @@ def test_annotation_meta_matches_enums() -> None:
     assert resp.status_code == 200
     body = resp.json()
     assert body["policy_version"] == DEFAULT_ANNOTATION_POLICY_VERSION
-    assert body["human_labels"] == [m.value for m in HumanLabel]
+    assert body["human_labels"] == list(UI_HUMAN_LABELS)
     assert body["reason_codes"]["include"] == list(UI_INCLUDE_REASON_ORDER)
     assert body["reason_codes"]["exclude"] == list(UI_EXCLUDE_REASON_ORDER)
     assert set(body["deprecated_reason_codes"]) == set(DEPRECATED_REASON_CODES)
     assert "duplicate_event" not in body["reason_codes"]["exclude"]
-    assert "bare_repost" in body["reason_codes"]["exclude"]
+    assert body["reason_codes"]["exclude"] == [
+        "low_information",
+        "old_information",
+        "not_frontier",
+        "other",
+    ]
     assert "other" in body["reason_codes"]["include"]
-    assert body["validation"]["reason_codes_soft_max"] == 3
+    assert len(body["reason_codes"]["include"]) == 4
+    assert len(body["reason_codes"]["exclude"]) == 4
+    assert body["validation"]["reason_codes_soft_max"] == 2
     assert body["confidence"]["default"] == 0.8
+    assert "uncertain" not in body["human_labels"]
+    assert "duplicate" not in body["human_labels"]
 
 
 def test_reason_and_note_validation(db) -> None:

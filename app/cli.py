@@ -307,6 +307,9 @@ def _cmd_editorial(args: argparse.Namespace) -> int:
 
 
 def _build_daily_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    from app.daily.short_video.audio_schemas import DEFAULT_VOICE
+
+    _default_voice = DEFAULT_VOICE
     dry = subparsers.add_parser("dry-run", help="Run thin LangGraph daily harness (stubs, no X/LLM)")
     dry.add_argument(
         "--with-lock",
@@ -367,8 +370,54 @@ def _build_daily_parser(subparsers: argparse._SubParsersAction[argparse.Argument
     )
     publish_today.add_argument("--dry-run", action="store_true")
     publish_today.add_argument("--accept-gap", action="store_true")
+    publish_today.add_argument(
+        "--split-by-day",
+        action="store_true",
+        help="Only include posts published on the report Shanghai calendar day",
+    )
     publish_today.add_argument("--skip-deps", action="store_true")
     publish_today.set_defaults(daily_command="publish-today")
+
+    retry_collect = subparsers.add_parser(
+        "retry-collect",
+        help="Fail-forward: re-collect failed_retryable accounts into an existing run",
+    )
+    retry_collect.add_argument("--run-id", default="", help="Existing run id")
+    retry_collect.add_argument("--latest", action="store_true", help="Use most recent run")
+    retry_collect.add_argument(
+        "--handles",
+        default="",
+        help="Comma-separated handles (default: failed accounts from the run)",
+    )
+    retry_collect.add_argument(
+        "--report-date",
+        default="",
+        help="Pin CONNOR_COLLECT_REPORT_DATE (YYYY-MM-DD)",
+    )
+    retry_collect.add_argument("--accept-gap", action="store_true")
+    retry_collect.add_argument(
+        "--no-accept-partial",
+        action="store_true",
+        help="Do not soft-skip remaining failures",
+    )
+    retry_collect.add_argument(
+        "--passes",
+        type=int,
+        default=1,
+        help="Iterative retry rounds (default: 1; ignored when --until-done)",
+    )
+    retry_collect.add_argument(
+        "--until-done",
+        action="store_true",
+        help="Cool down and retry every interval until all accounts succeed",
+    )
+    retry_collect.add_argument(
+        "--interval-sec",
+        type=int,
+        default=0,
+        help="Seconds between retry passes (default: 900 / env)",
+    )
+    retry_collect.set_defaults(daily_command="retry-collect")
 
     api = subparsers.add_parser("serve-api", help="Serve Daily + Console FastAPI (runs/annotations)")
     api.add_argument("--host", default="127.0.0.1")
@@ -420,6 +469,116 @@ def _build_daily_parser(subparsers: argparse._SubParsersAction[argparse.Argument
     withdraw_cmd = subparsers.add_parser("withdraw-report", help="Withdraw a published daily report")
     withdraw_cmd.add_argument("--report-id", required=True)
     withdraw_cmd.set_defaults(daily_command="withdraw-report")
+
+    plan_short = subparsers.add_parser(
+        "plan-short-video",
+        help="Plan vertical short-video narration from a published digest (writes video_plan.json)",
+    )
+    plan_short.add_argument("--date", required=True, help="YYYY-MM-DD published report date")
+    plan_short.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Use mock planner (no LLM)",
+    )
+    plan_short.add_argument(
+        "--output-dir",
+        default="",
+        help="Artifact root (default: data/short_video/<date>/)",
+    )
+    plan_short.add_argument(
+        "--max-stories",
+        type=int,
+        default=0,
+        help="Optional cap on spoken beats after merge (0=cover full day, default)",
+    )
+    plan_short.set_defaults(daily_command="plan-short-video")
+
+    synth_short = subparsers.add_parser(
+        "synthesize-short-video",
+        help="TTS + captions from video_plan.json (writes narration audio + captions.srt)",
+    )
+    synth_short.add_argument("--date", default="", help="YYYY-MM-DD (loads data/short_video/<date>/video_plan.json)")
+    synth_short.add_argument(
+        "--plan",
+        default="",
+        help="Path to video_plan.json (overrides --date lookup)",
+    )
+    synth_short.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Mock TTS: silent WAV + estimated captions (no network)",
+    )
+    synth_short.add_argument(
+        "--output-dir",
+        default="",
+        help="Artifact root (default: data/short_video/)",
+    )
+    synth_short.add_argument(
+        "--voice",
+        default=_default_voice,
+        help=f"edge-tts voice (default: {_default_voice})",
+    )
+    synth_short.set_defaults(daily_command="synthesize-short-video")
+
+    render_short = subparsers.add_parser(
+        "render-short-video",
+        help="Build Remotion props + platform copy; encode MP4/cover (or --dry-run)",
+    )
+    render_short.add_argument("--date", required=True, help="YYYY-MM-DD artifact day")
+    render_short.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Write props/platform copy only; skip Remotion encode",
+    )
+    render_short.add_argument(
+        "--output-dir",
+        default="",
+        help="Artifact root (default: data/short_video/)",
+    )
+    render_short.add_argument(
+        "--voice",
+        default=_default_voice,
+        help="Used if narration is missing and must be synthesized",
+    )
+    render_short.add_argument(
+        "--no-ensure-audio",
+        action="store_true",
+        help="Fail if narration_script.json is missing instead of synthesizing",
+    )
+    render_short.set_defaults(daily_command="render-short-video")
+
+    produce_short = subparsers.add_parser(
+        "produce-short-video",
+        help="One-shot: plan → TTS → Remotion props/render → quality_report.json",
+    )
+    produce_short.add_argument("--date", required=True, help="YYYY-MM-DD published report date")
+    produce_short.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Mock planner/TTS; skip Remotion encode",
+    )
+    produce_short.add_argument(
+        "--output-dir",
+        default="",
+        help="Artifact root (default: data/short_video/)",
+    )
+    produce_short.add_argument(
+        "--max-stories",
+        type=int,
+        default=0,
+        help="Optional cap on spoken beats after merge (0=cover full day, default)",
+    )
+    produce_short.add_argument(
+        "--voice",
+        default=_default_voice,
+        help=f"edge-tts voice (default: {_default_voice})",
+    )
+    produce_short.add_argument(
+        "--fail-on-quality-warnings",
+        action="store_true",
+        help="Treat quality warnings as hard failures",
+    )
+    produce_short.set_defaults(daily_command="produce-short-video")
 
 
 def _cmd_daily(args: argparse.Namespace) -> int:
@@ -506,14 +665,46 @@ def _cmd_daily(args: argparse.Namespace) -> int:
         return 0 if result.get("ok") else 1
 
     if command == "publish-today":
+        from app.daily.config import load_project_dotenv
         from app.daily.daily_publish import run_daily_and_publish
 
+        load_project_dotenv(override=False)
         result = run_daily_and_publish(
             force=bool(args.force),
             accept_gap=bool(args.accept_gap),
             dry_run=bool(args.dry_run),
             skip_deps=bool(args.skip_deps),
+            split_by_day=bool(args.split_by_day),
         )
+        print(result.to_dict())
+        return 0 if result.ok else 1
+
+    if command == "retry-collect":
+        from app.daily.retry_failed_collect import retry_failed_collect
+
+        handles = [
+            h.strip().lstrip("@")
+            for h in str(getattr(args, "handles", "") or "").split(",")
+            if h.strip()
+        ]
+        until_done = bool(getattr(args, "until_done", False))
+        interval_sec = int(getattr(args, "interval_sec", 0) or 0)
+        try:
+            result = retry_failed_collect(
+                run_id=str(getattr(args, "run_id", "") or "").strip() or None,
+                latest=bool(getattr(args, "latest", False)),
+                handles=handles or None,
+                report_date=str(getattr(args, "report_date", "") or "").strip() or None,
+                accept_gap=bool(getattr(args, "accept_gap", False)),
+                accept_partial=not bool(getattr(args, "no_accept_partial", False)),
+                max_passes=None if until_done else max(1, int(getattr(args, "passes", 1) or 1)),
+                until_done=until_done,
+                wait_before_first=until_done,
+                interval_sec=interval_sec or None,
+            )
+        except Exception as exc:  # noqa: BLE001
+            print(f"retry-collect failed: {exc}", file=sys.stderr)
+            return 1
         print(result.to_dict())
         return 0 if result.ok else 1
 
@@ -655,6 +846,215 @@ def _cmd_daily(args: argparse.Namespace) -> int:
                 print(f"withdraw-report failed: {tip.message}", file=sys.stderr)
                 return 1
             print(pub.report_to_ops_dict(report))
+        return 0
+
+    if command == "plan-short-video":
+        from app.daily.config import DailySettings
+        from app.daily.db import create_db_engine, create_session_factory, init_schema
+        from app.daily.short_video import ShortVideoSourceError, plan_short_video
+
+        settings = DailySettings.from_env()
+        engine = create_db_engine(settings.database_url)
+        init_schema(engine)
+        factory = create_session_factory(engine)
+        llm = None
+        dry_run = bool(args.dry_run)
+        if not dry_run:
+            try:
+                from app.editorial.llm_client import LLMSettings, OpenAICompatibleClient
+
+                llm = OpenAICompatibleClient(LLMSettings.from_env())
+            except Exception as exc:  # noqa: BLE001
+                print(
+                    f"plan-short-video LLM unavailable ({exc}); use --dry-run",
+                    file=sys.stderr,
+                )
+                return 1
+
+        output_dir = Path(args.output_dir).resolve() if str(args.output_dir or "").strip() else None
+        with factory() as session:
+            try:
+                result = plan_short_video(
+                    session,
+                    report_date=str(args.date),
+                    llm=llm,
+                    dry_run=dry_run,
+                    output_dir=output_dir,
+                    max_stories=int(args.max_stories),
+                )
+            except (ShortVideoSourceError, ValueError) as tip:
+                print(f"plan-short-video failed: {tip}", file=sys.stderr)
+                return 1
+            print(
+                {
+                    "report_date": result.report_date,
+                    "output_path": str(result.output_path),
+                    "story_count": result.story_count,
+                    "hook": result.plan.hook,
+                    "dry_run": result.dry_run,
+                }
+            )
+        return 0
+
+    if command == "synthesize-short-video":
+        from app.daily.short_video import (
+            ShortVideoSourceError,
+            TTSError,
+            synthesize_short_video,
+        )
+        from app.daily.short_video.audio_schemas import DEFAULT_VOICE
+
+        plan_arg = str(args.plan or "").strip()
+        date_arg = str(args.date or "").strip()
+        if not plan_arg and not date_arg:
+            print("synthesize-short-video requires --date or --plan", file=sys.stderr)
+            return 1
+
+        output_dir = Path(args.output_dir).resolve() if str(args.output_dir or "").strip() else None
+        try:
+            result = synthesize_short_video(
+                report_date=date_arg or None,
+                plan_path=Path(plan_arg).resolve() if plan_arg else None,
+                output_dir=output_dir,
+                dry_run=bool(args.dry_run),
+                voice=str(args.voice or "").strip() or DEFAULT_VOICE,
+            )
+        except (ShortVideoSourceError, TTSError, ValueError) as tip:
+            print(f"synthesize-short-video failed: {tip}", file=sys.stderr)
+            return 1
+        print(
+            {
+                "report_date": result.report_date,
+                "day_dir": str(result.day_dir),
+                "plan_path": str(result.plan_path),
+                "audio_path": str(result.audio_path),
+                "captions_path": str(result.captions_path),
+                "timeline_path": str(result.timeline_path),
+                "duration_ms": result.timeline.duration_ms,
+                "segment_count": len(result.timeline.segments),
+                "engine": result.timeline.engine,
+                "dry_run": result.dry_run,
+            }
+        )
+        return 0
+
+    if command == "render-short-video":
+        from app.daily.short_video import (
+            QualityGateError,
+            RemotionRenderError,
+            ShortVideoSourceError,
+            TTSError,
+            render_short_video,
+        )
+        from app.daily.short_video.audio_schemas import DEFAULT_VOICE
+
+        output_dir = Path(args.output_dir).resolve() if str(args.output_dir or "").strip() else None
+        try:
+            result = render_short_video(
+                report_date=str(args.date),
+                output_dir=output_dir,
+                dry_run=bool(args.dry_run),
+                ensure_audio=not bool(args.no_ensure_audio),
+                voice=str(args.voice or "").strip() or DEFAULT_VOICE,
+            )
+        except QualityGateError as tip:
+            print(f"render-short-video quality failed: {tip}", file=sys.stderr)
+            return 1
+        except (ShortVideoSourceError, TTSError, RemotionRenderError, ValueError) as tip:
+            print(f"render-short-video failed: {tip}", file=sys.stderr)
+            return 1
+        print(
+            {
+                "report_date": result.report_date,
+                "day_dir": str(result.day_dir),
+                "props_path": str(result.props_path),
+                "video_path": str(result.video_path),
+                "cover_path": str(result.cover_path),
+                "platform_files": {k: str(v) for k, v in result.platform_paths.items()},
+                "quality_warnings": result.quality_warnings,
+                "quality_ok": None if result.quality_report is None else result.quality_report.ok,
+                "dry_run": result.dry_run,
+            }
+        )
+        return 0
+
+    if command == "produce-short-video":
+        from app.daily.config import DailySettings
+        from app.daily.db import create_db_engine, create_session_factory, init_schema
+        from app.daily.short_video import (
+            QualityGateError,
+            RemotionRenderError,
+            ShortVideoSourceError,
+            TTSError,
+            produce_short_video,
+        )
+        from app.daily.short_video.audio_schemas import DEFAULT_VOICE
+
+        settings = DailySettings.from_env()
+        engine = create_db_engine(settings.database_url)
+        init_schema(engine)
+        factory = create_session_factory(engine)
+        llm = None
+        dry_run = bool(args.dry_run)
+        if not dry_run:
+            try:
+                from app.editorial.llm_client import LLMSettings, OpenAICompatibleClient
+
+                llm = OpenAICompatibleClient(LLMSettings.from_env())
+            except Exception as exc:  # noqa: BLE001
+                print(
+                    f"produce-short-video LLM unavailable ({exc}); use --dry-run",
+                    file=sys.stderr,
+                )
+                return 1
+
+        output_dir = Path(args.output_dir).resolve() if str(args.output_dir or "").strip() else None
+        with factory() as session:
+            try:
+                result = produce_short_video(
+                    session,
+                    report_date=str(args.date),
+                    llm=llm,
+                    dry_run=dry_run,
+                    output_dir=output_dir,
+                    max_stories=int(args.max_stories),
+                    voice=str(args.voice or "").strip() or DEFAULT_VOICE,
+                    fail_on_quality_warnings=bool(args.fail_on_quality_warnings),
+                )
+            except QualityGateError as tip:
+                print(f"produce-short-video quality failed: {tip}", file=sys.stderr)
+                if tip.report:
+                    print(
+                        {
+                            "quality_ok": tip.report.ok,
+                            "errors": tip.report.errors,
+                            "warnings": tip.report.warnings,
+                            "report_path": "quality_report.json",
+                        },
+                        file=sys.stderr,
+                    )
+                return 1
+            except (ShortVideoSourceError, TTSError, RemotionRenderError, ValueError) as tip:
+                print(f"produce-short-video failed: {tip}", file=sys.stderr)
+                return 1
+            print(
+                {
+                    "report_date": result.report_date,
+                    "day_dir": str(result.day_dir),
+                    "plan_path": str(result.plan_path),
+                    "audio_path": str(result.audio_path),
+                    "captions_path": str(result.captions_path),
+                    "props_path": str(result.props_path),
+                    "video_path": str(result.video_path),
+                    "cover_path": str(result.cover_path),
+                    "quality_path": str(result.quality_path),
+                    "story_count": result.story_count,
+                    "quality_ok": result.quality.ok,
+                    "quality_warnings": result.quality.warnings,
+                    "platform_files": {k: str(v) for k, v in result.platform_paths.items()},
+                    "dry_run": result.dry_run,
+                }
+            )
         return 0
 
     print("Unknown daily command", file=sys.stderr)

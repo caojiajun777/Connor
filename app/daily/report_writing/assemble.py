@@ -23,19 +23,193 @@ from app.daily.report_writing.schemas import (
     normalize_category,
 )
 
+# Lower = more newsworthy. Safety net when packager marks everything "high".
+# Applies inside every category (模型发布 / 开发生态 / 产品应用 / 技术与洞察 / 行业动态).
+_TIER0 = (
+    "gemini 3.6",
+    "gemini 3.5",
+    "gemini3.6",
+    "gemini3.5",
+    "gpt-5",
+    "gpt5",
+    "claude opus",
+    "claude sonnet",
+    "claude fable",
+    "kimi k3",
+    "qwen3.8",
+    "qwen 3.8",
+    "grok 4",
+    "nemotron",
+    "deepseek-v3",
+    "deepseek v3",
+    "cosmos 3",
+    "blackwell",
+)
+_TIER1 = (
+    "google",
+    "gemini",
+    "openai",
+    "anthropic",
+    "nvidia",
+    "meta ",
+    "llama",
+    "moonshot",
+    "月之暗面",
+    "alibaba",
+    "阿里",
+    "qwen",
+    "xai",
+    "grok",
+    "deepseek",
+    "vllm",
+    "openrouter",
+    "hugging face",
+    "huggingface",
+)
+_TIER_NICHE = (
+    "robot",
+    "机器人",
+    "xiaomi",
+    "小米",
+    "motif",
+    "poolside",
+    "laguna",
+    "韩国",
+)
+
+
+def headline_editorial_weight(text: str, category: str | None = None) -> int:
+    """0 = day-defining; higher = more niche. Used in every category as sort tie-break."""
+    t = (text or "").lower()
+    cat = normalize_category(category) if category else ""
+
+    soft_attr = any(
+        x in t
+        for x in ("爆料源", "相关人士", "据传", "传闻", "未获官方", "有人认为", "有人评")
+    )
+    official_attr = any(
+        x in t
+        for x in ("官方", "联合公布", "正式发布", "正式公布", "正式推出", "宣布开源")
+    )
+    followup = any(
+        x in t
+        for x in (
+            "性能细节",
+            "performance detail",
+            "评测成绩",
+            "first impression",
+            "初印象",
+            "优于前代",
+        )
+    )
+
+    is_tier0 = any(x in t for x in _TIER0)
+    is_niche = any(x in t for x in _TIER_NICHE) and not is_tier0
+
+    if is_tier0:
+        base = 0
+    elif is_niche:
+        base = 8
+    elif any(x in t for x in _TIER1):
+        base = 2
+    else:
+        base = 5
+
+    if followup:
+        base += 3
+
+    # Soft attribution trails confirmed lines; "正式发布" must not promote niche models.
+    if soft_attr:
+        base += 5
+    elif official_attr and not is_niche:
+        base = min(base, 1)
+
+    # Niche stays niche even if the blurb says「正式发布」.
+    if is_niche:
+        base = max(base, 8)
+
+    if cat == "行业动态":
+        # Confirmed security / production incidents lead; leak color / commentary trails.
+        if any(x in t for x in ("安全事件", "攻破", "生产环境", "联合公布", "红队", "越狱")):
+            base = 0 if not soft_attr else min(base, 3)
+        if soft_attr and any(x in t for x in ("预训练", "评安全", "认为", "点评")):
+            base = max(base, 6)
+    elif cat == "技术与洞察":
+        if any(
+            x in t
+            for x in ("imo", "竞赛", "基准", "评测", "elo", "智能指数", "scorecard", "反例")
+        ):
+            base = min(base, 1) if not soft_attr else max(base, 5)
+        if soft_attr:
+            base = max(base, 6)
+    elif cat == "开发生态":
+        if any(x in t for x in ("纪录", "record", "sota", "吞吐", "预训练性能")):
+            base = 0
+        elif any(x in t for x in ("首日支持", "day-one", "day one", "day1")):
+            # Product name may be tier0; day-one support still trails SOTA records.
+            base = 2
+    elif cat == "产品应用":
+        if any(x in t for x in ("上架", "上线", "开放", "接入")) and (
+            any(x in t for x in _TIER0) or any(x in t for x in _TIER1)
+        ):
+            base = min(base, 2)
+    elif cat == "模型发布":
+        if followup:
+            base = max(base, 3)
+
+    return min(20, max(0, base))
+
+
+def _guardrail_importance(importance: str, weight: int) -> str:
+    if weight <= 2:
+        return "high"
+    if weight <= 4 and importance == "low":
+        return "medium"
+    if weight >= 8 and importance == "high":
+        return "medium"
+    return importance
+
+
+def _category_index(category: str) -> int:
+    cat = normalize_category(category)
+    return DIGEST_CATEGORIES.index(cat) if cat in DIGEST_CATEGORIES else 99
+
+
+def event_sort_key(event: EventPackage) -> tuple[int, int, int, int, str]:
+    """Category → importance → editorial weight → priority → id."""
+    weight = headline_editorial_weight(
+        f"{event.headline} {event.summary}",
+        event.category,
+    )
+    importance = _guardrail_importance(event.importance, weight)
+    return (
+        _category_index(event.category),
+        IMPORTANCE_RANK.get(importance, 9),
+        weight,
+        int(event.priority or 100),
+        event.event_id,
+    )
+
 
 def _sort_events(events: list[EventPackage]) -> list[EventPackage]:
-    """Category taxonomy first, then importance — so #ranks match TOC top-to-bottom."""
-    return sorted(
-        events,
-        key=lambda e: (
-            DIGEST_CATEGORIES.index(normalize_category(e.category))
-            if normalize_category(e.category) in DIGEST_CATEGORIES
-            else 99,
-            IMPORTANCE_RANK.get(e.importance, 9),
-            e.event_id,
-        ),
-    )
+    """Within each category, rank by news value (importance / weight / priority)."""
+    return sorted(events, key=event_sort_key)
+
+
+def apply_importance_guardrails(events: list[EventPackage]) -> list[EventPackage]:
+    """Nudge importance when the model over/under-weights obvious tiers."""
+    out: list[EventPackage] = []
+    for event in events:
+        weight = headline_editorial_weight(
+            f"{event.headline} {event.summary}",
+            event.category,
+        )
+        importance = _guardrail_importance(event.importance, weight)
+        if importance != event.importance:
+            out.append(event.model_copy(update={"importance": importance}))
+        else:
+            out.append(event)
+    return out
 
 
 def build_digest_toc(news_items: list[DigestNewsItem]) -> list[DigestTocSection]:
@@ -57,18 +231,36 @@ def reorder_digest_json(
     *,
     event_packages: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Re-rank an existing digest_v1 blob by category → sequential #1..N TOC."""
-    _ = event_packages
+    """Re-rank digest_v1 by category → importance → priority → editorial weight."""
     items_raw = [it for it in (raw.get("items") or []) if isinstance(it, dict)]
     if not items_raw:
         return raw
 
-    def cat_key(it: dict[str, Any]) -> tuple[int, int, str]:
-        cat = normalize_category(str(it.get("category") or ""))
-        cat_i = DIGEST_CATEGORIES.index(cat) if cat in DIGEST_CATEGORIES else 99
-        return (cat_i, int(it.get("rank") or 999), str(it.get("event_id") or ""))
+    pkg_by_id: dict[str, dict[str, Any]] = {}
+    for pkg in event_packages or []:
+        if isinstance(pkg, dict) and pkg.get("event_id"):
+            pkg_by_id[str(pkg["event_id"])] = pkg
 
-    ordered = sorted(items_raw, key=cat_key)
+    def item_key(it: dict[str, Any]) -> tuple[int, int, int, int, int, str]:
+        eid = str(it.get("event_id") or "")
+        pkg = pkg_by_id.get(eid) or {}
+        category = str(it.get("category") or pkg.get("category") or "")
+        importance = str(pkg.get("importance") or it.get("importance") or "medium")
+        priority = int(pkg.get("priority") or 100)
+        headline = str(it.get("headline") or pkg.get("headline") or "")
+        summary = str(pkg.get("summary") or it.get("blurb") or "")
+        weight = headline_editorial_weight(f"{headline} {summary}", category)
+        importance = _guardrail_importance(importance, weight)
+        return (
+            _category_index(category),
+            IMPORTANCE_RANK.get(importance, 9),
+            weight,
+            priority,
+            int(it.get("rank") or 999),
+            eid,
+        )
+
+    ordered = sorted(items_raw, key=item_key)
     news_items: list[DigestNewsItem] = []
     for rank, it in enumerate(ordered, start=1):
         news_items.append(
@@ -194,7 +386,7 @@ def assemble_digest(
     session: Session | None = None,
 ) -> DigestDocument:
     """Merge writer copy with packages; assign #rank, TOC, and optional images."""
-    ordered_events = _sort_events(events)
+    ordered_events = _sort_events(apply_importance_guardrails(events))
     draft_by_event = {item.event_id: item for item in written.items}
 
     news_items: list[DigestNewsItem] = []

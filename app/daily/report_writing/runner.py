@@ -14,7 +14,11 @@ from app.daily.public import publish as pub
 from app.daily.report_writing.assemble import assemble_digest
 from app.daily.report_writing.packager import mock_package_events, package_events
 from app.daily.report_writing.schemas import digest_document_to_json, event_packages_to_json
-from app.daily.report_writing.writer import mock_write_report_copy, write_report_copy
+from app.daily.report_writing.writer import (
+    citation_sources_from_posts,
+    mock_write_report_copy,
+    write_report_copy,
+)
 
 
 class ReportWritingLLM(Protocol):
@@ -67,12 +71,34 @@ def _latest_translation(session: Session, post_id: str, run_id: str | None) -> s
     return (row.summary if row else "") or ""
 
 
+def _selection_rank_by_post(session: Session, source_run_id: str | None) -> dict[str, int]:
+    if not source_run_id:
+        return {}
+    sel_run = session.execute(
+        select(SelectionRun).where(SelectionRun.run_id == source_run_id)
+    ).scalar_one_or_none()
+    if sel_run is None:
+        return {}
+    rows = session.execute(
+        select(SelectionItem).where(
+            SelectionItem.selection_run_id == sel_run.id,
+            SelectionItem.selection_status == SelectionItemStatus.SELECTED.value,
+        )
+    ).scalars().all()
+    out: dict[str, int] = {}
+    for row in rows:
+        rank = int(row.final_rank) if row.final_rank is not None else 999
+        out[str(row.post_id)] = rank
+    return out
+
+
 def load_posts_for_packaging(
     session: Session,
     post_ids: list[str],
     *,
     source_run_id: str | None,
 ) -> list[dict[str, Any]]:
+    rank_by_post = _selection_rank_by_post(session, source_run_id)
     posts: list[dict[str, Any]] = []
     for post_id in post_ids:
         post = session.get(Post, post_id)
@@ -94,8 +120,11 @@ def load_posts_for_packaging(
                 "text_translated_reference": _latest_translation(
                     session, post.post_id, source_run_id
                 ),
+                "selection_rank": rank_by_post.get(post_id, 999),
             }
         )
+    # Prefer selection order when the caller passed an unordered id list.
+    posts.sort(key=lambda p: (int(p.get("selection_rank") or 999), str(p["post_id"])))
     return posts
 
 
@@ -145,6 +174,7 @@ def write_report_from_selection(
             packaged.events,
             report_date=report_date,
             prompt_version=writer_prompt_version,
+            citation_sources=citation_sources_from_posts(posts),
         )
 
     digest = assemble_digest(
@@ -163,8 +193,8 @@ def write_report_from_selection(
         session,
         source_run_id=source_run_id,
         report_date=report_date,
-        title=written.title or f"AI 早报 {report_date}",
-        overview=lead or f"AI 早报 {report_date}",
+        title=written.title or f"AI 日报 {report_date}",
+        overview=lead or f"AI 日报 {report_date}",
         keywords=written.keywords,
         post_ids=cited,
     )
@@ -235,6 +265,7 @@ def apply_writer_to_existing_draft(
             packaged.events,
             report_date=report.report_date,
             prompt_version=writer_prompt_version,
+            citation_sources=citation_sources_from_posts(posts),
         )
 
     digest = assemble_digest(
@@ -247,7 +278,7 @@ def apply_writer_to_existing_draft(
     if not lead and digest.items:
         lead = "；".join(f"#{it.rank} {it.headline}" for it in digest.items[:4])
 
-    report.title = written.title or f"AI 早报 {report.report_date}"
+    report.title = written.title or f"AI 日报 {report.report_date}"
     report.overview = lead or report.title
     report.keywords = list(written.keywords)
     report.event_packages = event_packages_to_json(packaged.events)

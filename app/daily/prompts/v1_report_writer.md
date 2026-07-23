@@ -18,7 +18,7 @@ From event packages only, produce:
 - Every body section must list `event_ids` and `citation_post_ids` it draws from.
 - Prefer calm, precise operator language over marketing hype.
 - Title and lead must be Chinese.
-- For unverified frontier intel: keep the claim with source attribution and uncertainty wording — **do not drop or downplay it because official confirmation is missing**.
+- For unverified frontier intel: keep the claim; attribute leaks as「爆料源」, official statements as「官方指出」— **never** write「Lumina声称」or name leak handles; **do not drop or downplay it because official confirmation is missing**.
 
 ## Layering guidance
 

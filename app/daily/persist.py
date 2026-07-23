@@ -35,11 +35,23 @@ def persist_account_collection(
     posts: list[NormalizedPost],
     scan: AccountScanResult,
     cursor_before: WorkingCursor | None,
+    replace_existing: bool = False,
 ) -> dict[str, Any]:
     """Upsert posts + run_posts + account_run + optional cursor outbox (same transaction)."""
     handle_key = handle.lstrip("@")
     new_global = 0
     linked = 0
+
+    if replace_existing:
+        prior = session.execute(
+            select(AccountRun).where(
+                AccountRun.run_id == run_id,
+                AccountRun.handle == handle_key,
+            )
+        ).scalar_one_or_none()
+        if prior is not None:
+            session.delete(prior)
+            session.flush()
 
     for post in posts:
         existing = session.get(Post, post.post_id)

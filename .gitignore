@@ -2,6 +2,8 @@
 node_modules/
 dist/
 *.log
+short_video/.render-props.json
+short_video/public/renders/
 
 # Python
 __pycache__/
@@ -15,6 +17,11 @@ htmlcov/
 
 # Runtime / secrets
 .env
+.env.*
+!.env.example
+*.local
+frontend/.env*
+web/.env*
 .x-agent-profile/
 data/
 artifacts/

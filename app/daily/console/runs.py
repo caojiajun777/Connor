@@ -19,7 +19,7 @@ from app.daily.db.models import (
     SelectionItem,
     SelectionRun,
 )
-from app.daily.enums import CollectionStatus, SelectionItemStatus, TaskStatus
+from app.daily.enums import CollectionStatus, RunStatus, SelectionItemStatus, TaskStatus
 
 
 def _iso(dt: Any) -> str | None:
@@ -380,6 +380,18 @@ def get_run_errors(session: Session, run_id: str) -> dict[str, Any] | None:
     }
 
 
+_ACTIVE_RUN_STATUSES = frozenset(
+    {
+        RunStatus.INITIALIZING.value,
+        RunStatus.COLLECTING.value,
+        RunStatus.SUMMARIZING.value,
+        RunStatus.EVALUATING.value,
+        RunStatus.SELECTING.value,
+        RunStatus.FINALIZING.value,
+    }
+)
+
+
 def get_overview(session: Session) -> dict[str, Any]:
     from app.daily.console.annotations import purge_unsaved_annotation_runs
 
@@ -387,13 +399,19 @@ def get_overview(session: Session) -> dict[str, Any]:
     purged = purge_unsaved_annotation_runs(session)
 
     runs = list_console_runs(session, limit=50)
+    # Live pipeline first (even with 0 candidates while minting cursors / early collect).
+    active = [r for r in runs if str(r.get("status") or "") in _ACTIVE_RUN_STATUSES]
     # Prefer a real daily run over empty shells / tiny pytest seeds (often 3 candidates).
-    with_candidates = [r for r in runs if int(r.get("candidate_count") or 0) > 0]
-    substantive = [r for r in with_candidates if int(r.get("candidate_count") or 0) >= 10]
+    # Include account_count>0 so report-day cursor-mint runs (0 candidates) still surface.
+    with_progress = [
+        r
+        for r in runs
+        if int(r.get("candidate_count") or 0) > 0 or int(r.get("account_count") or 0) > 0
+    ]
     latest = (
-        substantive[0]
-        if substantive
-        else (with_candidates[0] if with_candidates else (runs[0] if runs else None))
+        active[0]
+        if active
+        else (with_progress[0] if with_progress else (runs[0] if runs else None))
     )
     # Todo = only tasks with at least one manually saved human label.
     pending_annotations = [
@@ -422,8 +440,30 @@ def get_overview(session: Session) -> dict[str, Any]:
             }
             for a in pending_annotations
         ],
-        "recent_runs": with_candidates[:8] or runs[:5],
+        "recent_runs": _recent_overview_runs(active, with_progress, runs),
+        "active_run": active[0] if active else None,
     }
+
+
+def _recent_overview_runs(
+    active: list[dict[str, Any]],
+    with_progress: list[dict[str, Any]],
+    runs: list[dict[str, Any]],
+    *,
+    limit: int = 8,
+) -> list[dict[str, Any]]:
+    """Active runs first, then runs with collect progress (deduped)."""
+    recent: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for row in [*active, *with_progress, *runs]:
+        rid = str(row.get("run_id") or "")
+        if not rid or rid in seen:
+            continue
+        seen.add(rid)
+        recent.append(row)
+        if len(recent) >= limit:
+            break
+    return recent
 
 
 def _count_by(rows: list[Any], field: str) -> dict[str, int]:

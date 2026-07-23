@@ -26,6 +26,19 @@ Open [http://localhost:3000](http://localhost:3000).
 
 `next.config.ts` rewrites `/api/*` and `/media/*` to the FastAPI origin so browser requests stay same-origin.
 
+## Production
+
+Live site: **https://aiconnor.cn** (Cloudflare Tunnel → this Next app on `127.0.0.1:3000`).
+
+Full runbook: [`../docs/cloudflare-tunnel.md`](../docs/cloudflare-tunnel.md).
+
+```powershell
+npm run build
+npm run start -- -p 3000 -H 127.0.0.1
+```
+
+Do not serve a turbopack-contaminated `.next` with `next start`; if you see missing `[turbopack]_runtime.js`, delete `.next` and rebuild.
+
 ## Environment
 
 | Variable | Default | Purpose |

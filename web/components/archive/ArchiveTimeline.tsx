@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Reveal } from "@/components/shared/Reveal";
 import { SignalMarker } from "@/components/shared/SignalMarker";
 import { SignalMeta } from "@/components/shared/SignalMeta";
-import { formatReportDate, monthLabel } from "@/lib/format";
+import { displayReportTitle, formatReportDate, monthLabel } from "@/lib/format";
 import type { PublicReportListItem } from "@/lib/types/public";
 
 interface ArchiveTimelineProps {
@@ -98,7 +98,7 @@ export function ArchiveTimeline({ items }: ArchiveTimelineProps) {
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="type-headline text-[20px] transition-colors duration-200 group-hover:text-accent sm:text-[22px]">
-                              {item.title}
+                              {displayReportTitle(item.title)}
                             </p>
                             {item.overview_excerpt ? (
                               <p className="type-lead-italic mt-2 line-clamp-2 text-[15px]">

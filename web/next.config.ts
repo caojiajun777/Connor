@@ -39,12 +39,59 @@ function remotePatternsFromEnv(): NonNullable<
   return patterns;
 }
 
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), payment=()",
+  },
+  {
+    key: "Content-Security-Policy",
+    value: [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+      "img-src 'self' data: blob: https://pbs.twimg.com https://abs.twimg.com",
+      "media-src 'self' https://video.twimg.com https://pbs.twimg.com",
+      "font-src 'self' data:",
+      "style-src 'self' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-inline'",
+      "connect-src 'self'",
+      "form-action 'self'",
+    ].join("; "),
+  },
+];
+
 const nextConfig: NextConfig = {
-  async rewrites() {
+  async headers() {
     return [
       {
-        source: "/api/:path*",
-        destination: `${API_ORIGIN}/api/:path*`,
+        source: "/:path*",
+        headers: securityHeaders,
+      },
+    ];
+  },
+  async rewrites() {
+    // Public surface only — never proxy console/ops to the internet hostname.
+    return [
+      {
+        source: "/api/public/meta",
+        destination: `${API_ORIGIN}/api/public/meta`,
+      },
+      {
+        source: "/api/public/reports",
+        destination: `${API_ORIGIN}/api/public/reports`,
+      },
+      {
+        source: "/api/public/reports/:path*",
+        destination: `${API_ORIGIN}/api/public/reports/:path*`,
+      },
+      {
+        source: "/api/public/analytics/:path*",
+        destination: `${API_ORIGIN}/api/public/analytics/:path*`,
       },
       {
         source: "/media/:path*",

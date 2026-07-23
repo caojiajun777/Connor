@@ -12,6 +12,38 @@ $RepoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $RepoRoot
 $env:PYTHONPATH = $RepoRoot
 
+function Import-DotEnv([string]$Path) {
+    if (-not (Test-Path $Path)) { return }
+    Get-Content $Path -Encoding UTF8 | ForEach-Object {
+        $line = $_.Trim()
+        if (-not $line -or $line.StartsWith("#")) { return }
+        $eq = $line.IndexOf("=")
+        if ($eq -lt 1) { return }
+        $key = $line.Substring(0, $eq).Trim()
+        $val = $line.Substring($eq + 1).Trim().Trim('"').Trim("'")
+        if (-not $key) { return }
+        if (-not (Test-Path "Env:$key")) {
+            Set-Item -Path "Env:$key" -Value $val
+        }
+    }
+}
+
+Import-DotEnv (Join-Path $RepoRoot ".env")
+
+# Fail-forward collect policy for the scheduled daily pipeline.
+if (-not $DryRun) {
+    $env:CONNOR_COLLECT_AUTO_RETRY = "1"
+    $env:CONNOR_COLLECT_RETRY_INTERVAL_SEC = "600"
+} elseif (-not $env:CONNOR_COLLECT_RETRY_INTERVAL_SEC) {
+    $env:CONNOR_COLLECT_RETRY_INTERVAL_SEC = "600"
+}
+if (-not $env:CONNOR_COLLECT_RETRY_STOP_BELOW) { $env:CONNOR_COLLECT_RETRY_STOP_BELOW = "5" }
+if (-not $env:CONNOR_PUBLISH_DEADLINE_HOUR) { $env:CONNOR_PUBLISH_DEADLINE_HOUR = "12" }
+if (-not $env:CONNOR_PUBLISH_DEADLINE_MINUTE) { $env:CONNOR_PUBLISH_DEADLINE_MINUTE = "0" }
+if (-not $env:CONNOR_PUBLISH_DEADLINE_RESERVE_MIN) { $env:CONNOR_PUBLISH_DEADLINE_RESERVE_MIN = "90" }
+if (-not $env:CONNOR_MCP_RATE_LIMIT_RETRIES) { $env:CONNOR_MCP_RATE_LIMIT_RETRIES = "0" }
+if (-not $env:CONNOR_COLLECT_ACCOUNT_PAUSE_MS) { $env:CONNOR_COLLECT_ACCOUNT_PAUSE_MS = "1000" }
+
 $LogDir = Join-Path $RepoRoot "data\logs"
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 $Stamp = Get-Date -Format "yyyyMMdd_HHmmss"
@@ -76,10 +108,22 @@ try {
 
     $argList = [System.Collections.Generic.List[string]]::new()
     $argList.Add((Join-Path $RepoRoot "scripts\daily_and_publish.py"))
+    # Production defaults: same-day posts only; tolerate small collect gaps + inline auto-retry.
+    [void]$argList.Add("--split-by-day")
+    [void]$argList.Add("--accept-gap")
     if ($Force) { [void]$argList.Add("--force") }
     if ($DryRun) { [void]$argList.Add("--dry-run") }
     if ($SkipDeps) { [void]$argList.Add("--skip-deps") }
 
+    Write-Log (
+        "collect policy auto_retry={0} interval_sec={1} stop_below={2} publish_deadline={3}:{4} reserve_min={5}" -f
+        $env:CONNOR_COLLECT_AUTO_RETRY,
+        $env:CONNOR_COLLECT_RETRY_INTERVAL_SEC,
+        $env:CONNOR_COLLECT_RETRY_STOP_BELOW,
+        $env:CONNOR_PUBLISH_DEADLINE_HOUR,
+        $env:CONNOR_PUBLISH_DEADLINE_MINUTE,
+        $env:CONNOR_PUBLISH_DEADLINE_RESERVE_MIN
+    )
     Write-Log ("launch: {0} {1}" -f $python, ($argList -join " "))
 
     # Start-Process -Wait gives a reliable exit code under Task Scheduler

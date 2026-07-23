@@ -83,6 +83,34 @@ def create_console_router(session_factory: sessionmaker) -> APIRouter:
             session.commit()
             return payload
 
+    @router.get("/analytics/summary")
+    def analytics_summary(days: int = 7) -> dict[str, Any]:
+        from app.daily.console import analytics as analytics_reads
+
+        with session_factory() as session:
+            return analytics_reads.summary(session, days=days)
+
+    @router.get("/analytics/timeseries")
+    def analytics_timeseries(days: int = 7) -> dict[str, Any]:
+        from app.daily.console import analytics as analytics_reads
+
+        with session_factory() as session:
+            return analytics_reads.timeseries(session, days=days)
+
+    @router.get("/analytics/paths")
+    def analytics_paths(days: int = 7, limit: int = 20) -> dict[str, Any]:
+        from app.daily.console import analytics as analytics_reads
+
+        with session_factory() as session:
+            return analytics_reads.top_paths(session, days=days, limit=limit)
+
+    @router.get("/analytics/hours")
+    def analytics_hours(days: int = 7) -> dict[str, Any]:
+        from app.daily.console import analytics as analytics_reads
+
+        with session_factory() as session:
+            return analytics_reads.hours(session, days=days)
+
     @router.get("/runs")
     def list_runs(limit: int = 50, include_noise: bool = False) -> list[dict[str, Any]]:
         with session_factory() as session:

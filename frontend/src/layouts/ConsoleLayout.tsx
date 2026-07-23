@@ -3,6 +3,7 @@ import './layout.css'
 
 const links = [
   { to: '/console', end: true, label: 'Overview' },
+  { to: '/console/analytics', label: 'Analytics' },
   { to: '/console/runs', label: 'Runs' },
   { to: '/console/editorial', label: 'Editorial' },
   { to: '/console/watchlist', label: 'Watchlist' },

@@ -108,11 +108,11 @@ describe("extractHeroSlides", () => {
     ];
 
     const slides = extractHeroSlides(reports);
-    // Round-robin across reports so older days stay in the reel.
+    // Today’s frames first (rank order), then yesterday — not interleaved.
     expect(slides.map((s) => s.url)).toEqual([
       "/media/a.jpg",
-      "/media/c.jpg",
       "/media/b.jpg",
+      "/media/c.jpg",
     ]);
     expect(slides[0]?.category).toBe("模型发布");
     expect(slides[0]?.signalIndex).toBe(1);

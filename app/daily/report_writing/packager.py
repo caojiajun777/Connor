@@ -50,6 +50,8 @@ def build_packager_user_prompt(
             "(e.g. Artificial Analysis Kimi K3 Index/ELO/cost/tokens/hallucination). "
             "Do NOT merge official launch with that scorecard, nor with first-impression posts. "
             "Do NOT split one scorecard series into many top-N items. "
+            "Set importance + priority by true news value within each category: "
+            "e.g. Google Gemini 3.6 Flash launch outranks Xiaomi robotics model the same day. "
             "Cite post_id values only. Do not invent facts."
         ),
         "posts": posts,
@@ -107,6 +109,26 @@ def _singleton_event(
         importance="medium",
         external_links=[url] if url.startswith("http") else [],
     )
+
+
+def _fill_priority_from_selection(
+    events: list[EventPackage],
+    posts: list[dict[str, Any]],
+) -> list[EventPackage]:
+    """If the model left priority at default 100, seed from selection_rank."""
+    by_id = _post_by_id(posts)
+    out: list[EventPackage] = []
+    for event in events:
+        if int(event.priority or 100) != 100:
+            out.append(event)
+            continue
+        ranks = [
+            int(by_id.get(pid, {}).get("selection_rank") or 999)
+            for pid in event.citation_post_ids
+        ]
+        sel = min(ranks) if ranks else 999
+        out.append(event.model_copy(update={"priority": max(1, min(999, sel))}))
+    return out
 
 
 def _ensure_coverage(
@@ -214,6 +236,7 @@ def package_events(
     cleaned = _ensure_coverage(
         cleaned, posts, discarded=discarded, report_date=report_date
     )
+    cleaned = _fill_priority_from_selection(cleaned, posts)
     if not cleaned:
         raise ValueError("packager produced no usable events with citations")
     return EventPackageResult(
@@ -248,6 +271,7 @@ def mock_package_events(posts: list[dict[str, Any]], *, report_date: str) -> Eve
                 "primary_post_id": pid,
                 "merge_reason": "",
                 "importance": "high" if i <= 2 else "medium",
+                "priority": i,
                 "external_links": [url] if url.startswith("http") else [],
             }
         )

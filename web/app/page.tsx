@@ -5,7 +5,6 @@ import { BroadcastHero } from "@/components/home/BroadcastHero";
 import { HomeLoadNotice } from "@/components/home/HomeLoadNotice";
 import { HomeShell } from "@/components/home/HomeShell";
 import { getReport, listReports } from "@/lib/api/reports";
-import { formatReportDate } from "@/lib/format";
 import { extractHeroSlides } from "@/lib/hero-slides";
 import type { PublicReportDetail } from "@/lib/types/public";
 
@@ -35,8 +34,13 @@ export default async function HomePage() {
   const heroDetails: PublicReportDetail[] = [];
 
   if (latest) {
+    // Newest-first so the reel is 今日 → 昨天 → 前天.
+    const recent = [...items]
+      .sort((a, b) => b.report_date.localeCompare(a.report_date))
+      .slice(0, HERO_REPORT_DAYS);
+
     const detailResults = await Promise.all(
-      items.slice(0, HERO_REPORT_DAYS).map(async (item) => {
+      recent.map(async (item) => {
         try {
           return await getReport(item.report_date);
         } catch {
@@ -66,7 +70,6 @@ export default async function HomePage() {
         <BroadcastHero
           slides={slides}
           latestHref={latestReport ? "#latest-report" : null}
-          reportDate={latest ? formatReportDate(latest.report_date) : null}
         />
       </section>
 

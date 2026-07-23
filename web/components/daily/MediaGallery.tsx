@@ -9,6 +9,7 @@ import {
   mediaItemKey,
   usableMediaItems,
 } from "@/lib/media-gallery";
+import { safeMediaSrc } from "@/lib/safe-url";
 import type { PublicMediaItem } from "@/lib/types/public";
 
 interface MediaGalleryProps {
@@ -29,13 +30,22 @@ function ArticleImage({
     item.width > 0 &&
     typeof item.height === "number" &&
     item.height > 0;
+  const src = safeMediaSrc(item.url);
+  if (!src) return null;
 
   return (
-    <figure className="media-frame media-frame-article m-0 block w-full overflow-hidden rounded-[18px] bg-[#f0f0f2]">
+    <figure
+      className="media-frame media-frame-article m-0 block w-full overflow-hidden rounded-[18px] bg-[#f0f0f2]"
+      style={
+        hasSize
+          ? { aspectRatio: `${item.width} / ${item.height}` }
+          : { aspectRatio: "16 / 10", minHeight: 200 }
+      }
+    >
       {item.type === "video" ? (
         <video
-          src={item.url}
-          className="mx-auto h-auto max-h-[min(72vh,720px)] w-full object-contain"
+          src={src}
+          className="mx-auto h-full max-h-[min(72vh,720px)] w-full object-contain"
           muted
           playsInline
           preload="metadata"
@@ -44,11 +54,11 @@ function ArticleImage({
         />
       ) : hasSize ? (
         <Image
-          src={item.url}
+          src={src}
           alt={item.alt_text ?? "Post media"}
           width={item.width!}
           height={item.height!}
-          className="mx-auto h-auto max-h-[min(72vh,720px)] w-full object-contain"
+          className="mx-auto h-full max-h-[min(72vh,720px)] w-full object-contain"
           sizes="(max-width: 768px) 100vw, 720px"
           quality={95}
           unoptimized
@@ -58,10 +68,10 @@ function ArticleImage({
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={item.url}
+          src={src}
           alt={item.alt_text ?? "Post media"}
-          className="mx-auto h-auto max-h-[min(72vh,720px)] w-full object-contain"
-          loading="lazy"
+          className="mx-auto h-full max-h-[min(72vh,720px)] w-full object-contain"
+          loading="eager"
           decoding="async"
           draggable={false}
           onError={onError}
@@ -76,7 +86,12 @@ export function MediaGallery({ media, variant = "grid" }: MediaGalleryProps) {
 
   const maxItems = variant === "article" ? 3 : 4;
   const items = useMemo(
-    () => usableMediaItems(media, failedKeys, maxItems),
+    () =>
+      usableMediaItems(
+        media.filter((item) => Boolean(safeMediaSrc(item.url))),
+        failedKeys,
+        maxItems,
+      ),
     [media, failedKeys, maxItems],
   );
   const layout = getMediaGalleryLayout(items);
@@ -113,6 +128,8 @@ export function MediaGallery({ media, variant = "grid" }: MediaGalleryProps) {
     >
       {items.map((item, i) => {
         const isTallTriple = layout === "triple" && i === 0;
+        const src = safeMediaSrc(item.url);
+        if (!src) return null;
         return (
           <div
             key={mediaItemKey(item)}
@@ -122,7 +139,7 @@ export function MediaGallery({ media, variant = "grid" }: MediaGalleryProps) {
           >
             {item.type === "video" ? (
               <video
-                src={item.url}
+                src={src}
                 className="h-full w-full object-cover"
                 muted
                 playsInline
@@ -132,7 +149,7 @@ export function MediaGallery({ media, variant = "grid" }: MediaGalleryProps) {
               />
             ) : (
               <Image
-                src={item.url}
+                src={src}
                 alt={item.alt_text ?? "Post media"}
                 fill
                 className="object-cover"

@@ -5,12 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import sessionmaker
 
 from app.daily.auth import require_ops_access
+from app.daily.public import analytics as public_analytics
 from app.daily.public import publish as pub
 from app.daily.public import queries
 from app.daily.public.downloader import local_media_root
@@ -46,6 +47,38 @@ def create_public_router(session_factory: sessionmaker) -> APIRouter:
     def public_meta() -> dict[str, Any]:
         with session_factory() as session:
             return queries.site_meta(session).model_dump(mode="json")
+
+    @router.post("/analytics/events")
+    def ingest_analytics(body: public_analytics.AnalyticsBatchIn, request: Request) -> dict[str, Any]:
+        if not body.events:
+            return {"accepted": 0, "excluded": 0}
+        client_ip = public_analytics.resolve_client_ip(
+            cf_connecting_ip=request.headers.get("cf-connecting-ip"),
+            x_forwarded_for=request.headers.get("x-forwarded-for"),
+            direct_client_host=request.client.host if request.client else None,
+        )
+        with session_factory() as session:
+            try:
+                result = public_analytics.ingest_events(
+                    session,
+                    body,
+                    user_agent=request.headers.get("user-agent"),
+                    client_ip=client_ip,
+                )
+                session.commit()
+                return result
+            except ValueError as err:
+                session.rollback()
+                code = str(err)
+                if code == "rate_limited":
+                    raise HTTPException(
+                        status_code=429,
+                        detail={"code": "rate_limited", "message": "too many analytics events"},
+                    ) from err
+                raise HTTPException(
+                    status_code=422,
+                    detail={"code": "invalid_events", "message": code},
+                ) from err
 
     @router.get("/reports")
     def list_reports(
@@ -205,6 +238,14 @@ def create_media_router() -> APIRouter:
     """Serve locally stored media files (dev / same-origin rewrite)."""
     router = APIRouter(tags=["media"])
     root = local_media_root()
+    allowed_ext = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".webp": "image/webp",
+        ".gif": "image/gif",
+        ".mp4": "video/mp4",
+    }
 
     @router.get("/media/{file_path:path}")
     def media_file(file_path: str) -> FileResponse:
@@ -212,10 +253,17 @@ def create_media_router() -> APIRouter:
         target = (base / file_path).resolve()
         if not _is_under(base, target) or not target.is_file():
             raise HTTPException(status_code=404, detail="media not found")
+        ext = target.suffix.lower()
+        media_type = allowed_ext.get(ext)
+        if media_type is None:
+            raise HTTPException(status_code=404, detail="media not found")
         return FileResponse(
             target,
+            media_type=media_type,
             headers={
                 "Cache-Control": "public, max-age=0, must-revalidate",
+                "X-Content-Type-Options": "nosniff",
+                "Content-Disposition": f'inline; filename="{target.name}"',
             },
         )
 
